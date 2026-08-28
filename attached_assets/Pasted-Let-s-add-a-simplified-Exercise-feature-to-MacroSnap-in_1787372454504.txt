@@ -1,0 +1,17 @@
+Let's add a simplified Exercise feature to MacroSnap, inspired by the "guided bodyweight workout" concept popular in apps like Home Workout — No Equipment. Keep this simple: no equipment, no timers/hardware integration, just guided bodyweight routines.
+
+Add a new "Workout" section, accessible from the bottom navigation or from the dashboard with a clear button.
+
+1. WORKOUT LIBRARY
+Show 4 workout categories: Full Body, Upper Body, Lower Body, and Core. Each category contains a short list of 5-8 simple bodyweight exercises (e.g., squats, push-ups, lunges, planks, jumping jacks) with a name and either a rep count (like "15 reps") or a duration (like "30 seconds") for each.
+
+2. GUIDED WORKOUT FLOW
+When the user taps "Start" on a category, walk them through each exercise one at a time on a full screen: show the exercise name, a simple instruction line, and either a countdown timer (for duration-based exercises) or a rep counter with a "done" button (for rep-based exercises). Include a short rest countdown (e.g., 15-20 seconds) between exercises. Progress through the whole list automatically, then show a "Workout Complete" screen with the celebration animation style already used elsewhere in the app.
+
+3. INTEGRATION WITH EXISTING NUTRITION TRACKING
+When a workout is completed, estimate calories burned based on the workout category and duration (a rough estimate is fine, doesn't need to be precise) and add this back into the user's daily dashboard as "calories burned today," alongside calories eaten, so the two connect naturally.
+
+4. WORKOUT HISTORY
+Log completed workouts so they show up on the History screen alongside meal logging — a simple "workout completed" entry is enough, doesn't need its own separate calendar.
+
+Match the existing dark theme, fonts, and card style already used throughout the app. Make sure this new section scrolls properly and doesn't get cut off by the bottom navigation, and test on a mobile-sized screen before confirming it's done.

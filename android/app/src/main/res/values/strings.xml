@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MacroCount</string>
+    <string name="title_activity_main">MacroCount</string>
+    <string name="package_name">com.macrocount.app</string>
+    <string name="custom_url_scheme">com.macrocount.app</string>
+</resources>

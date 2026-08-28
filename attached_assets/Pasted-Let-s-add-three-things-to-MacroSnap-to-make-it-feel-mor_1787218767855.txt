@@ -1,0 +1,21 @@
+Let's add three things to MacroSnap to make it feel more rewarding and fun to use, not just functional.
+
+1. CELEBRATION ANIMATIONS
+- When the user logs a meal that brings them to their daily calorie/macro target, show a short celebration animation (confetti burst or similar) over the dashboard.
+- When the streak counter increases, show a similar celebration on the History screen or wherever the streak updates.
+- When the user hits a new personal best streak, make this celebration bigger/more noticeable than a normal day's celebration.
+- Keep animations short (1-2 seconds) so they don't slow the user down or feel annoying on repeat use.
+- Use the existing orange (#FF6B35) and green (#00D68F) theme colors in the animation so it feels consistent with the rest of the app.
+
+2. ACHIEVEMENTS / BADGES
+- Add an achievements section, accessible from the Profile screen.
+- Create badges for milestones like: first meal logged, 3-day streak, 7-day streak, 30-day streak, 10 meals logged, 50 meals logged, 100 meals logged, first perfect week (hit target every day for 7 days).
+- Each badge should have a simple icon and name, shown as locked/grayed out until earned, and colorful/highlighted once unlocked.
+- When a badge is newly unlocked, show a small celebratory popup or banner (similar style to the celebration animations above) so the user notices in the moment, not just when they check the Profile screen later.
+
+3. DAILY CHALLENGES
+- On the dashboard, show one small optional challenge for the day, separate from the main calorie target. Rotate between a few types, for example: "Log all 3 main meals today", "Hit your protein target today", "Log a meal before 9am", "Try something new today".
+- Show a simple checkmark or progress indicator when the day's challenge is completed, with its own small celebration when completed.
+- These challenges should be optional and not block or interfere with normal meal logging if the user ignores them.
+
+Use the existing dark theme, fonts (Poppins/Manrope for headings, Inter for body), and card style already established across the app. Make sure none of this new content breaks scrolling or gets cut off by the bottom navigation bar, based on the layout issues fixed earlier. Test on a mobile-sized screen before confirming it's done.
