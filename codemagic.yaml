@@ -10,13 +10,13 @@ workflows:
       vars:
         XCODE_SCHEME: "App"
     scripts:
-      - name: Install pnpm
-        script: npm install --global pnpm
-      - name: Install workspace dependencies
+      - name: Enable pnpm
+        script: corepack enable && corepack prepare pnpm@latest --activate
+      - name: Install dependencies
         script: pnpm install --frozen-lockfile
       - name: Sync Capacitor iOS
         script: pnpm --filter @workspace/macrosnap exec cap sync ios
       - name: Install CocoaPods dependencies
-        script: cd ios/App && pod install
+        script: cd artifacts/macrosnap/ios/App && pod install
     artifacts:
-      - ios/App/build/**/*.xcarchive
+      - artifacts/macrosnap/ios/App/build/**/*.xcarchive
