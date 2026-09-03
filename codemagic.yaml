@@ -6,7 +6,6 @@ workflows:
     environment:
       node: latest
       xcode: latest
-      cocoapods: default
       vars:
         XCODE_SCHEME: "App"
     scripts:
@@ -16,7 +15,7 @@ workflows:
         script: pnpm install --frozen-lockfile
       - name: Sync Capacitor iOS
         script: pnpm --filter @workspace/macrosnap exec cap sync ios
-      - name: Install CocoaPods dependencies
-        script: cd artifacts/macrosnap/ios/App && pod install
+      - name: Resolve Swift Package dependencies
+        script: xcodebuild -resolvePackageDependencies -project artifacts/macrosnap/ios/App/App.xcodeproj -scheme "$XCODE_SCHEME"
     artifacts:
       - artifacts/macrosnap/ios/App/build/**/*.xcarchive
