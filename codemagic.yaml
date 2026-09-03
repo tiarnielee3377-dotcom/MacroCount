@@ -15,6 +15,12 @@ workflows:
         script: pnpm install --frozen-lockfile
       - name: Sync Capacitor iOS
         script: pnpm --filter @workspace/macrosnap exec cap sync ios
+      - name: Debug SPM camera path
+        script: |
+          echo "--- Package.swift camera reference ---"
+          grep -B2 -A2 "capacitor+camera\|CapacitorCamera" artifacts/macrosnap/ios/App/CapApp-SPM/Package.swift
+          echo "--- Actual pnpm store contents ---"
+          find artifacts/macrosnap/node_modules/.pnpm -maxdepth 1 -iname "*capacitor+camera*" 2>/dev/null || find node_modules/.pnpm -maxdepth 1 -iname "*capacitor+camera*" 2>/dev/null
       - name: Resolve Swift Package dependencies
         script: xcodebuild -resolvePackageDependencies -project artifacts/macrosnap/ios/App/App.xcodeproj -scheme "$XCODE_SCHEME"
     artifacts:
