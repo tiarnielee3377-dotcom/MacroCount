@@ -14,6 +14,8 @@ workflows:
         script: corepack enable && corepack prepare pnpm@10.26.1 --activate
       - name: Install dependencies
         script: pnpm install --frozen-lockfile
+      - name: Build web assets
+        script: PORT=5173 BASE_PATH=/ pnpm --filter @workspace/macrosnap run build
       - name: Sync Capacitor iOS
         script: pnpm --filter @workspace/macrosnap exec cap sync ios
       - name: Fix Podfile plugin paths
