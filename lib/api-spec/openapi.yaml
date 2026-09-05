@@ -1,0 +1,974 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: profile
+    description: Nutrition profile operations
+  - name: meals
+    description: Meal logging operations
+  - name: recipes
+    description: Recipe discovery and macro-aware meal inspiration
+  - name: meal-plan
+    description: Weekly recipe planning and grocery list operations
+  - name: workouts
+    description: Guided bodyweight workouts and completion history
+  - name: progress
+    description: History, achievements, streak, and challenge progress
+  - name: account
+    description: Optional account access and anonymous-progress recovery
+  - name: billing
+    description: Subscription access, Stripe Checkout, and customer portal operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get the current nutrition profile
+      responses:
+        "200":
+          description: Current profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionProfile"
+    put:
+      operationId: saveProfile
+      tags: [profile]
+      summary: Save onboarding details and calculated nutrition targets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NutritionProfileInput"
+      responses:
+        "200":
+          description: Saved profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NutritionProfile"
+  /meals:
+    get:
+      operationId: listMeals
+      tags: [meals]
+      summary: List logged meals for a day
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: timeZone
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Logged meals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Meal"
+    post:
+      operationId: createMeal
+      tags: [meals]
+      summary: Save a confirmed meal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealInput"
+      responses:
+        "201":
+          description: Created meal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Meal"
+  /meals/{id}:
+    delete:
+      operationId: deleteMeal
+      tags: [meals]
+      summary: Delete a logged meal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        "204":
+          description: Meal deleted
+  /meals/analyze:
+    post:
+      operationId: analyzeMeal
+      tags: [meals]
+      summary: Estimate nutrition from a meal photo or text description
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealAnalysisInput"
+      responses:
+        "200":
+          description: Estimated meal nutrition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealEstimate"
+  /recipes:
+    get:
+      operationId: listRecipes
+      tags: [recipes]
+      summary: Browse the MacroCount starter recipe library
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: mealType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [breakfast, lunch, dinner, snack]
+      responses:
+        "200":
+          description: Matching recipes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recipe"
+  /recipes/recommendations:
+    get:
+      operationId: getRecipeRecommendations
+      tags: [recipes]
+      summary: Suggest recipes that fit today's remaining nutrition targets
+      parameters:
+        - name: timeZone
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Macro-aware recipe suggestions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecipeRecommendations"
+  /workouts:
+    get:
+      operationId: listWorkouts
+      tags: [workouts]
+      summary: List guided bodyweight workout routines
+      responses:
+        "200":
+          description: Workout routines grouped by category
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WorkoutRoutine"
+  /workouts/{workoutId}/complete:
+    post:
+      operationId: completeWorkout
+      tags: [workouts]
+      summary: Save a completed guided workout
+      parameters:
+        - name: workoutId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WorkoutCompletionInput"
+      responses:
+        "201":
+          description: Saved workout completion
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutCompletion"
+  /workouts/summary:
+    get:
+      operationId: getWorkoutSummary
+      tags: [workouts]
+      summary: Get workout calorie burn for today and recent completions
+      parameters:
+        - name: timeZone
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workout summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WorkoutSummary"
+  /meal-plan:
+    get:
+      operationId: getMealPlan
+      tags: [meal-plan]
+      summary: Get recipe assignments for a weekly meal plan
+      parameters:
+        - name: weekStart
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}$'
+      responses:
+        "200":
+          description: Weekly recipe meal plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealPlan"
+  /meal-plan/{date}/{slot}:
+    put:
+      operationId: saveMealPlanSlot
+      tags: [meal-plan]
+      summary: Assign a recipe to one weekly meal slot
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}$'
+        - name: slot
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [breakfast, lunch, dinner]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MealPlanSlotInput"
+      responses:
+        "200":
+          description: Saved recipe meal-plan slot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MealPlanSlot"
+    delete:
+      operationId: deleteMealPlanSlot
+      tags: [meal-plan]
+      summary: Remove a recipe from one weekly meal slot
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}$'
+        - name: slot
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [breakfast, lunch, dinner]
+      responses:
+        "204":
+          description: Meal-plan slot removed
+  /meal-plan/grocery:
+    get:
+      operationId: getGroceryList
+      tags: [meal-plan]
+      summary: Get the combined grocery list for a weekly meal plan
+      parameters:
+        - name: weekStart
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}-\d{2}$'
+      responses:
+        "200":
+          description: Combined grocery list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroceryList"
+  /meal-plan/grocery/checks:
+    put:
+      operationId: saveGroceryItemCheck
+      tags: [meal-plan]
+      summary: Check or uncheck one grocery item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroceryItemCheckInput"
+      responses:
+        "200":
+          description: Updated grocery list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroceryList"
+  /progress:
+    get:
+      operationId: getProgress
+      tags: [progress]
+      summary: Get meal history, streak, achievement, and daily challenge progress
+      parameters:
+        - name: timeZone
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session progress summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MacroProgress"
+  /account:
+    get:
+      operationId: getAccount
+      tags: [account]
+      summary: Get the signed-in account, if any
+      responses:
+        "200":
+          description: Current account status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountStatus"
+  /account/register:
+    post:
+      operationId: registerAccount
+      tags: [account]
+      summary: Create an account and link anonymous progress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountCredentials"
+      responses:
+        "201":
+          description: Account created and progress linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountStatus"
+  /account/login:
+    post:
+      operationId: loginAccount
+      tags: [account]
+      summary: Sign in and link any anonymous progress on this device
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountCredentials"
+      responses:
+        "200":
+          description: Signed in and progress linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountStatus"
+  /account/logout:
+    post:
+      operationId: logoutAccount
+      tags: [account]
+      summary: Sign out from this device
+      responses:
+        "204":
+          description: Signed out
+  /account/profile-preference:
+    post:
+      operationId: saveAccountProfilePreference
+      tags: [account]
+      summary: Choose account or local targets after a profile conflict
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountProfilePreference"
+      responses:
+        "200":
+          description: Profile choice saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountStatus"
+  /billing/entitlement:
+    get:
+      operationId: getBillingEntitlement
+      tags: [billing]
+      summary: Get the current trial and subscription access state
+      responses:
+        "200":
+          description: Current billing entitlement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingEntitlement"
+  /billing/simulate-trial-expired:
+    post:
+      operationId: simulateTrialExpired
+      tags: [billing]
+      summary: Development-only helper to expire the current trial immediately
+      responses:
+        "200":
+          description: Expired billing entitlement
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingEntitlement"
+  /billing/checkout:
+    post:
+      operationId: createBillingCheckout
+      tags: [billing]
+      summary: Create a hosted Stripe Checkout session for a subscription plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BillingCheckoutInput"
+      responses:
+        "200":
+          description: Hosted Checkout session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingRedirect"
+  /billing/portal:
+    post:
+      operationId: createBillingPortal
+      tags: [billing]
+      summary: Create a Stripe customer portal session
+      responses:
+        "200":
+          description: Stripe customer portal session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingRedirect"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    NutritionProfile:
+      type: object
+      properties:
+        weight:
+          type: number
+        goal:
+          type: string
+          enum: [lose, maintain, gain]
+        activityLevel:
+          type: string
+          enum: [sedentary, lightly_active, active, very_active]
+        calorieTarget:
+          type: number
+        proteinTarget:
+          type: number
+        carbsTarget:
+          type: number
+        fatTarget:
+          type: number
+      required: [weight, goal, activityLevel, calorieTarget, proteinTarget, carbsTarget, fatTarget]
+    NutritionProfileInput:
+      allOf:
+        - $ref: "#/components/schemas/NutritionProfile"
+    Meal:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        mealType:
+          type: string
+        calories:
+          type: number
+        protein:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        loggedAt:
+          type: string
+          format: date-time
+      required: [id, name, mealType, calories, protein, carbs, fat, loggedAt]
+    MealInput:
+      type: object
+      properties:
+        name:
+          type: string
+        mealType:
+          type: string
+        calories:
+          type: number
+        protein:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+      required: [name, mealType, calories, protein, carbs, fat]
+    MealAnalysisInput:
+      type: object
+      properties:
+        imageData:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+      required: [imageData, description]
+    MealEstimate:
+      type: object
+      properties:
+        name:
+          type: string
+        mealType:
+          type: string
+        calories:
+          type: number
+        protein:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        confidence:
+          type: number
+        notes:
+          type: string
+      required: [name, mealType, calories, protein, carbs, fat, confidence, notes]
+    RecipeIngredient:
+      type: object
+      properties:
+        name:
+          type: string
+        amount:
+          type: number
+        unit:
+          type: string
+        group:
+          type: string
+          enum: [produce, protein, pantry]
+      required: [name, amount, unit, group]
+    Recipe:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack]
+        imageLabel:
+          type: string
+        imageUrl:
+          type: [string, "null"]
+        ingredients:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecipeIngredient"
+        steps:
+          type: array
+          items:
+            type: string
+        calories:
+          type: number
+        protein:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+      required: [id, name, mealType, imageLabel, imageUrl, ingredients, steps, calories, protein, carbs, fat]
+    RecipeRecommendations:
+      type: object
+      properties:
+        recipes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Recipe"
+        message:
+          type: string
+      required: [recipes, message]
+    WorkoutExercise:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        mode:
+          type: string
+          enum: [reps, duration]
+        reps:
+          type: number
+        durationSeconds:
+          type: number
+        instruction:
+          type: string
+      required: [id, name, mode, instruction]
+    WorkoutRoutine:
+      type: object
+      properties:
+        id:
+          type: string
+        category:
+          type: string
+          enum: [full-body, upper-body, lower-body, core]
+        name:
+          type: string
+        description:
+          type: string
+        estimatedMinutes:
+          type: number
+        exercises:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutExercise"
+      required: [id, category, name, description, estimatedMinutes, exercises]
+    WorkoutCompletionInput:
+      type: object
+      properties:
+        durationSeconds:
+          type: number
+          minimum: 1
+          maximum: 7200
+      required: [durationSeconds]
+    WorkoutCompletion:
+      type: object
+      properties:
+        id:
+          type: number
+        workoutId:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        durationSeconds:
+          type: number
+        caloriesBurned:
+          type: number
+        completedAt:
+          type: string
+          format: date-time
+      required: [id, workoutId, name, category, durationSeconds, caloriesBurned, completedAt]
+    WorkoutDaySummary:
+      type: object
+      properties:
+        date:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        caloriesBurned:
+          type: number
+        workoutCount:
+          type: number
+      required: [date, caloriesBurned, workoutCount]
+    WorkoutSummary:
+      type: object
+      properties:
+        today:
+          $ref: "#/components/schemas/WorkoutDaySummary"
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkoutCompletion"
+      required: [today, history]
+    MealPlanSlot:
+      type: object
+      properties:
+        date:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        slot:
+          type: string
+          enum: [breakfast, lunch, dinner]
+        recipe:
+          $ref: "#/components/schemas/Recipe"
+      required: [date, slot, recipe]
+    MealPlan:
+      type: object
+      properties:
+        weekStart:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        slots:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealPlanSlot"
+      required: [weekStart, slots]
+    MealPlanSlotInput:
+      type: object
+      properties:
+        recipeId:
+          type: string
+      required: [recipeId]
+    GroceryItem:
+      type: object
+      properties:
+        key:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: string
+        checked:
+          type: boolean
+      required: [key, name, quantity, checked]
+    GroceryGroup:
+      type: object
+      properties:
+        group:
+          type: string
+          enum: [produce, protein, pantry]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroceryItem"
+      required: [group, items]
+    GroceryList:
+      type: object
+      properties:
+        weekStart:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroceryGroup"
+      required: [weekStart, groups]
+    GroceryItemCheckInput:
+      type: object
+      properties:
+        weekStart:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        ingredientKey:
+          type: string
+        checked:
+          type: boolean
+      required: [weekStart, ingredientKey, checked]
+    DailySummary:
+      type: object
+      properties:
+        date:
+          type: string
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        calories:
+          type: number
+        protein:
+          type: number
+        carbs:
+          type: number
+        fat:
+          type: number
+        mealCount:
+          type: number
+        onTarget:
+          type: boolean
+      required: [date, calories, protein, carbs, fat, mealCount, onTarget]
+    StreakSummary:
+      type: object
+      properties:
+        current:
+          type: number
+        longest:
+          type: number
+        isBroken:
+          type: boolean
+      required: [current, longest, isBroken]
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        unlocked:
+          type: boolean
+        progress:
+          type: number
+        target:
+          type: number
+      required: [id, name, description, icon, unlocked, progress, target]
+    DailyChallenge:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        progress:
+          type: number
+        target:
+          type: number
+        completed:
+          type: boolean
+      required: [id, title, description, progress, target, completed]
+    MacroProgress:
+      type: object
+      properties:
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailySummary"
+        streak:
+          $ref: "#/components/schemas/StreakSummary"
+        achievements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Achievement"
+        dailyChallenge:
+          $ref: "#/components/schemas/DailyChallenge"
+      required: [history, streak, achievements, dailyChallenge]
+    AccountCredentials:
+      type: object
+      properties:
+        email:
+          type: string
+          pattern: '^[^\s@]+@[^\s@]+\.[^\s@]+$'
+          maxLength: 320
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+      required: [email, password]
+    AccountStatus:
+      type: object
+      properties:
+        email:
+          type: ["string", "null"]
+        pendingProfile:
+          type: ["object", "null"]
+          properties:
+            weight:
+              type: number
+            goal:
+              type: string
+              enum: [lose, maintain, gain]
+            activityLevel:
+              type: string
+              enum: [sedentary, lightly_active, active, very_active]
+            calorieTarget:
+              type: number
+            proteinTarget:
+              type: number
+            carbsTarget:
+              type: number
+            fatTarget:
+              type: number
+          required: [weight, goal, activityLevel, calorieTarget, proteinTarget, carbsTarget, fatTarget]
+      required: [email, pendingProfile]
+    AccountProfilePreference:
+      type: object
+      properties:
+        choice:
+          type: string
+          enum: [account, local]
+      required: [choice]
+    BillingEntitlement:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [not_started, trialing, active, expired]
+        hasAccess:
+          type: boolean
+        trialEndsAt:
+          type: ["string", "null"]
+        plan:
+          type: ["string", "null"]
+          enum: [weekly, monthly, yearly, null]
+        subscriptionStatus:
+          type: ["string", "null"]
+        currentPeriodEndsAt:
+          type: ["string", "null"]
+        canManage:
+          type: boolean
+      required:
+        - status
+        - hasAccess
+        - trialEndsAt
+        - plan
+        - subscriptionStatus
+        - currentPeriodEndsAt
+        - canManage
+    BillingCheckoutInput:
+      type: object
+      properties:
+        plan:
+          type: string
+          enum: [weekly, monthly, yearly]
+      required: [plan]
+    BillingRedirect:
+      type: object
+      properties:
+        url:
+          type: string
+          pattern: '^https://'
+      required: [url]
+

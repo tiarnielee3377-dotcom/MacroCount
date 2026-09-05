@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "MacroCount"
+description = "A mobile-first food logging app that estimates calories and macros from meal photos, with onboarding targets and a daily nutrition dashboard."
+version = "1.0.0"
+id = "artifacts/macrosnap"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19027
+
+[services.development]
+run = "pnpm --filter @workspace/macrosnap run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/macrosnap", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/macrosnap/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19027"
+BASE_PATH = "/"

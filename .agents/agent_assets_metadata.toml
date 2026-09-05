@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "V3DgMQiLeujhN2GcG2wO7"
+uri = "file://exports/macrocount-project.zip"
+type = "unspecified"
+title = "MacroCount project source archive"
+description = "Complete MacroCount workspace archive including source, assets, configuration, Capacitor iOS and Android projects, package manifests, and lockfile. Dependencies, Git history, caches, internal workspace metadata, and generated build output are excluded."
+logical_id = "cc604704-b7d7-4135-8928-b26e1f16a10a"
+content_hash = "sha256:293ef901c98bcb4ad133c745eb5ff2d2649024b01fe517b35ab1b034b105d653"
+size = 84756441
+mtime_ms = 1787857686697
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:7f0fe299-195f-41d6-94b4-0b0f679a49fd/cc604704-b7d7-4135-8928-b26e1f16a10a/325d44c4-ef7b-49fe-9e2d-9de881ad9d52"
+storage_version_token = "1787857695813331"
+content_type = "application/octet-stream"

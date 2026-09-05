@@ -1,0 +1,10 @@
+- [OpenAPI numeric schema compatibility](openapi-number-schema.md) — Use `number`, not `integer`, in the shared API contract until generator and Zod versions align.
+- [OpenAPI format compatibility](openapi-format-compatibility.md) — Prefer explicit validation patterns over unsupported string formats in shared contracts.
+- [Calendar-day rewards](calendar-day-rewards.md) — Pass device timezone to day-based APIs and preserve calendar days as `YYYY-MM-DD` strings.
+- [Stripe webhook signing](stripe-webhook-signing.md) — Pass the connector's webhook secret to StripeSync so signature checks avoid a fragile database lookup.
+- [Stripe account consistency](stripe-account-consistency.md) — Keep StripeSync and checkout on the connected account when synced customer records already exist.
+- [Stripe subscription ordering](stripe-subscription-ordering.md) — Revalidate subscription webhooks and grant access from any active linked subscription.
+- [Stripe subscription reconciliation](stripe-subscription-reconciliation.md) — Use recent Stripe events plus a durable cursor; subscription creation filters miss renewals and status changes.
+- [Deployment startup health](deployment-startup-health.md) — Bind the HTTP port before slow external-service initialization so publish probes can pass.
+- [Billing outage isolation](billing-outage-isolation.md) — Fail open for nutrition routes while Stripe initializes or recovers; billing routes must explicitly return retryable unavailability.
+- [Capacitor monorepo native paths](capacitor-monorepo-native-paths.md) — Repair generated iOS dependency paths after sync by resolving packages from the app workspace.
