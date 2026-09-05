@@ -11,7 +11,7 @@ workflows:
         XCODE_SCHEME: "App"
     scripts:
       - name: Enable pnpm
-        script: corepack enable && corepack prepare pnpm@latest --activate
+        script: corepack enable && corepack prepare pnpm@10.26.1 --activate
       - name: Install dependencies
         script: pnpm install --frozen-lockfile
       - name: Sync Capacitor iOS
