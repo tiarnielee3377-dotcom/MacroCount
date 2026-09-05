@@ -16,16 +16,8 @@ workflows:
         script: pnpm install --frozen-lockfile
       - name: Sync Capacitor iOS
         script: pnpm --filter @workspace/macrosnap exec cap sync ios
-      - name: Fix Podfile relative path
-        script: |
-          PODFILE="artifacts/macrosnap/ios/App/Podfile"
-          REAL_PATH=$(node -e "console.log(require.resolve('@capacitor/ios/scripts/pods_helpers.rb', {paths:['artifacts/macrosnap']}))")
-          echo "Resolved pods_helpers -> $REAL_PATH"
-          test -f "$REAL_PATH" && echo "Confirmed file exists" || echo "WARNING: file not found"
-          ESCAPED=$(printf '%s\n' "$REAL_PATH" | sed 's/[&/\]/\\&/g')
-          sed -i.bak -E "s#require_relative '[^']*pods_helpers'#require_relative '$ESCAPED'#" "$PODFILE"
-          echo "--- Final Podfile require line ---"
-          grep 'require_relative' "$PODFILE"
+      - name: Fix Podfile plugin paths
+        script: node scripts/fix-podfile-paths.cjs
       - name: Install CocoaPods dependencies
         script: cd artifacts/macrosnap/ios/App && pod install
     artifacts:
