@@ -3,12 +3,18 @@ workflows:
     name: MacroCount iOS Build
     max_build_duration: 60
     instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: Codemagic
     environment:
       node: latest
       xcode: latest
       cocoapods: default
       vars:
         XCODE_SCHEME: "App"
+        BUNDLE_ID: "com.macrocount.app"
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.macrocount.app
     scripts:
       - name: Enable pnpm
         script: corepack enable && corepack prepare pnpm@10.26.1 --activate
@@ -20,7 +26,25 @@ workflows:
         script: pnpm --filter @workspace/macrosnap exec cap sync ios
       - name: Fix Podfile plugin paths
         script: node scripts/fix-podfile-paths.cjs
+      - name: Set up keychain to be used for codesigning
+        script: keychain initialize
+      - name: Fetch signing files
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+      - name: Add certificates to keychain
+        script: keychain add-certificates
+      - name: Set up code signing settings on Xcode project
+        script: xcode-project use-profiles
       - name: Install CocoaPods dependencies
         script: cd artifacts/macrosnap/ios/App && pod install
+      - name: Build ipa for distribution
+        script: |
+          xcode-project build-ipa \
+            --workspace "artifacts/macrosnap/ios/App/App.xcworkspace" \
+            --scheme "$XCODE_SCHEME"
     artifacts:
-      - artifacts/macrosnap/ios/App/build/**/*.xcarchive
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - build/ios/xcarchive/*.xcarchive
