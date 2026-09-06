@@ -12,9 +12,6 @@ workflows:
       vars:
         XCODE_SCHEME: "App"
         BUNDLE_ID: "com.macrocount.app"
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.macrocount.app
     scripts:
       - name: Enable pnpm
         script: corepack enable && corepack prepare pnpm@10.26.1 --activate
