@@ -20,7 +20,7 @@ workflows:
       - name: Install dependencies
         script: pnpm install --frozen-lockfile
       - name: Build web assets
-        script: PORT=5173 BASE_PATH=/ pnpm --filter @workspace/macrosnap run build
+        script: PORT=5173 BASE_PATH=/ VITE_API_BASE_URL=https://macro-count.replit.app pnpm --filter @workspace/macrosnap run build
       - name: Sync Capacitor iOS
         script: pnpm --filter @workspace/macrosnap exec cap sync ios
       - name: Fix Podfile plugin paths

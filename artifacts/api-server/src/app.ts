@@ -7,6 +7,12 @@ import { logger } from "./lib/logger";
 import { WebhookHandlers } from "./webhookHandlers";
 
 const app: Express = express();
+const NATIVE_APP_ORIGINS = new Set([
+  "capacitor://localhost",
+  "ionic://localhost",
+  "http://localhost",
+  "https://localhost",
+]);
 
 app.use(
   pinoHttp({
@@ -49,7 +55,14 @@ app.post(
   },
 );
 
-app.use(cors());
+app.use(
+  cors({
+    credentials: true,
+    origin(origin, callback) {
+      callback(null, !origin || NATIVE_APP_ORIGINS.has(origin));
+    },
+  }),
+);
 app.use(express.json({ limit: "12mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

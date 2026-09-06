@@ -257,6 +257,27 @@ beforeEach(() => {
   billingAvailable = true;
 });
 
+describe("Capacitor native requests", () => {
+  it("allows credentialed API requests from the Capacitor origin", async () => {
+    const response = await request(app)
+      .options("/api/profile")
+      .set("Origin", "capacitor://localhost")
+      .set("Access-Control-Request-Method", "GET");
+
+    expect(response.status).toBe(204);
+    expect(response.headers["access-control-allow-origin"]).toBe("capacitor://localhost");
+    expect(response.headers["access-control-allow-credentials"]).toBe("true");
+  });
+
+  it("accepts account mutations from the Capacitor origin", async () => {
+    const response = await request(app)
+      .post("/api/account/logout")
+      .set("Origin", "capacitor://localhost");
+
+    expect(response.status).toBe(204);
+  });
+});
+
 describe("billing outage isolation", () => {
   it("keeps meal logging available while billing is temporarily unavailable", async () => {
     billingAvailable = false;

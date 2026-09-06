@@ -131,19 +131,29 @@ function accountCookieOptions() {
   };
 }
 
+const NATIVE_APP_ORIGINS = new Set([
+  "capacitor://localhost",
+  "ionic://localhost",
+  "http://localhost",
+  "https://localhost",
+]);
+
+function isTrustedAppOrigin(origin: string | undefined, host: string | undefined) {
+  if (!origin) return true;
+  if (NATIVE_APP_ORIGINS.has(origin)) return true;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
+
 function isTrustedAccountMutation(req: {
   get: (header: string) => string | undefined;
   is: (type: string) => string | false | null;
 }) {
   if (!req.is("application/json")) return false;
-
-  const origin = req.get("origin");
-  if (!origin) return true;
-  try {
-    return new URL(origin).host === req.get("host");
-  } catch {
-    return false;
-  }
+  return isTrustedAppOrigin(req.get("origin"), req.get("host"));
 }
 
 function rejectUntrustedAccountMutation(
@@ -153,15 +163,7 @@ function rejectUntrustedAccountMutation(
 ) {
   if (requireJson && isTrustedAccountMutation(req)) return false;
 
-  const hasTrustedOrigin = (() => {
-    const origin = req.get("origin");
-    if (!origin) return true;
-    try {
-      return new URL(origin).host === req.get("host");
-    } catch {
-      return false;
-    }
-  })();
+  const hasTrustedOrigin = isTrustedAppOrigin(req.get("origin"), req.get("host"));
   if (!requireJson && hasTrustedOrigin) return false;
   res.status(403).json({ error: "Account changes must come from the MacroCount app." });
   return true;
