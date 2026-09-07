@@ -38,6 +38,11 @@ workflows:
         script: xcode-project use-profiles
       - name: Install CocoaPods dependencies
         script: cd artifacts/macrosnap/ios/App && pod install
+      - name: Increment iOS build number
+        script: |
+          cd artifacts/macrosnap/ios/App
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-build-number --platform=IOS --all-versions 6809140735)
+          agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
       - name: Build ipa for distribution
         script: |
           xcode-project build-ipa \
