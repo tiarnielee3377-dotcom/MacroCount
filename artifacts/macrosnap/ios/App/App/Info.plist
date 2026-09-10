@@ -26,6 +26,8 @@
 	<string>MacroCount uses the camera to photograph meals for nutrition analysis.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>MacroCount needs access to your photos so you can select and log photos of your meals.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>MacroCount may save meal photos to your photo library when you choose to keep them.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -71,7 +71,11 @@ export default function LogMeal() {
       }
       setImagePreview(photo.dataUrl);
     } catch (error) {
-      const message = error instanceof Error ? error.message.toLowerCase() : "";
+      console.error("Camera capture failed", error);
+      const message =
+        typeof error === "object" && error !== null && "message" in error && typeof error.message === "string"
+          ? error.message.toLowerCase()
+          : "";
       if (!message.includes("cancel")) {
         setErrorMessage("We couldn't open the camera. Check camera permission and try again.");
       }
