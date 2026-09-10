@@ -64,6 +64,9 @@ const billingCustomerLinksTable = {
   ownerId: { name: "ownerId" },
   stripeCustomerId: { name: "stripeCustomerId" },
 };
+const applePurchaseOwnershipTable = { _tag: "applePurchaseOwnershipTable", ownerId: { name: "ownerId" } };
+const appleTransactionsTable = { _tag: "appleTransactionsTable", ownerId: { name: "ownerId" } };
+const appleNotificationDeliveriesTable = { _tag: "appleNotificationDeliveriesTable" };
 
 function conditionValue(condition: { value?: unknown } | undefined) {
   return condition?.value;
@@ -248,6 +251,9 @@ vi.mock("@workspace/db", () => ({
   billingProfilesTable,
   billingOwnerAliasesTable,
   billingCustomerLinksTable,
+  applePurchaseOwnershipTable,
+  appleTransactionsTable,
+  appleNotificationDeliveriesTable,
 }));
 
 vi.mock("../stripeClient", () => ({

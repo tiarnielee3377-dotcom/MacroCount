@@ -622,3 +622,54 @@ export const CreateBillingPortalResponse = zod.object({
 })
 
 
+/**
+ * @summary Verify and claim an App Store subscription transaction
+ */
+
+
+
+export const VerifyAppleTransactionBody = zod.object({
+  "signedTransaction": zod.string().min(1)
+})
+
+export const VerifyAppleTransactionResponse = zod.object({
+  "plan": zod.enum(['weekly', 'monthly', 'yearly']),
+  "originalTransactionId": zod.string()
+})
+
+
+/**
+ * @summary Restore verified App Store subscription transactions
+ */
+
+export const restoreAppleTransactionsBodySignedTransactionsMax = 100;
+
+
+
+export const RestoreAppleTransactionsBody = zod.object({
+  "signedTransactions": zod.array(zod.string().min(1)).min(1).max(restoreAppleTransactionsBodySignedTransactionsMax)
+})
+
+export const RestoreAppleTransactionsResponse = zod.object({
+  "restored": zod.array(zod.object({
+  "plan": zod.enum(['weekly', 'monthly', 'yearly']),
+  "originalTransactionId": zod.string()
+}))
+})
+
+
+/**
+ * @summary Receive an App Store Server Notification
+ */
+
+
+
+export const ReceiveAppleWebhookBody = zod.object({
+  "signedPayload": zod.string().min(1)
+})
+
+export const ReceiveAppleWebhookResponse = zod.object({
+  "received": zod.literal(true)
+})
+
+

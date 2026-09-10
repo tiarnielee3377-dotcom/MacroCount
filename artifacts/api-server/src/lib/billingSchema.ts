@@ -58,6 +58,53 @@ export async function ensureBillingSchema() {
     );
   `));
   await db.execute(sql.raw(`
+    CREATE TABLE IF NOT EXISTS apple_purchase_ownership (
+      original_transaction_id text PRIMARY KEY,
+      owner_id text NOT NULL,
+      environment text NOT NULL,
+      product_id text NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE TABLE IF NOT EXISTS apple_transactions (
+      transaction_id text PRIMARY KEY,
+      original_transaction_id text NOT NULL,
+      owner_id text,
+      product_id text NOT NULL,
+      environment text NOT NULL,
+      purchased_at timestamptz,
+      expires_at timestamptz,
+      grace_period_expires_at timestamptz,
+      revoked_at timestamptz,
+      is_in_billing_retry boolean NOT NULL DEFAULT false,
+      state_signed_at timestamptz NOT NULL DEFAULT now(),
+      renewal_state_signed_at timestamptz,
+      raw_signed_transaction text NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    );
+    ALTER TABLE apple_transactions ADD COLUMN IF NOT EXISTS state_signed_at timestamptz;
+    ALTER TABLE apple_transactions ADD COLUMN IF NOT EXISTS renewal_state_signed_at timestamptz;
+    ALTER TABLE apple_transactions ALTER COLUMN owner_id DROP NOT NULL;
+    UPDATE apple_transactions SET state_signed_at = COALESCE(state_signed_at, created_at, now()) WHERE state_signed_at IS NULL;
+    ALTER TABLE apple_transactions ALTER COLUMN state_signed_at SET NOT NULL;
+    CREATE INDEX IF NOT EXISTS apple_transactions_owner_expiry_index
+      ON apple_transactions (owner_id, expires_at);
+    CREATE TABLE IF NOT EXISTS apple_notification_deliveries (
+      notification_uuid text PRIMARY KEY,
+      notification_type text,
+      subtype text,
+      signed_at timestamptz,
+      environment text,
+      received_at timestamptz NOT NULL DEFAULT now()
+    );
+    ALTER TABLE apple_notification_deliveries
+      ADD COLUMN IF NOT EXISTS notification_type text,
+      ADD COLUMN IF NOT EXISTS subtype text,
+      ADD COLUMN IF NOT EXISTS signed_at timestamptz,
+      ADD COLUMN IF NOT EXISTS environment text;
+  `));
+  await db.execute(sql.raw(`
     CREATE TABLE IF NOT EXISTS billing_subscription_reconciliation_retries (
       subscription_id text PRIMARY KEY,
       first_event_created bigint NOT NULL,

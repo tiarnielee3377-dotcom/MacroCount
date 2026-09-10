@@ -40,7 +40,6 @@ async function initializeStripe() {
     throw new Error("DATABASE_URL is required for Stripe synchronization.");
   }
 
-  await ensureBillingSchema();
   await runMigrations({ databaseUrl });
   await ensureMacroCountStripeCatalog();
   const stripeSync = await getStripeSync();
@@ -309,6 +308,11 @@ const isMainModule =
   process.argv[1] !== undefined && fileURLToPath(import.meta.url) === process.argv[1];
 
 if (isMainModule) {
-  const { initialization } = startServer(port);
-  void initialization;
+  ensureBillingSchema().then(() => {
+    const { initialization } = startServer(port);
+    void initialization;
+  }).catch((error) => {
+    logger.error({ err: error }, "Billing schema initialization failed");
+    process.exit(1);
+  });
 }

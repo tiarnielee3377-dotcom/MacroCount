@@ -5,6 +5,7 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { WebhookHandlers } from "./webhookHandlers";
+import { appleWebhook } from "./routes/apple";
 
 const app: Express = express();
 const NATIVE_APP_ORIGINS = new Set([
@@ -54,6 +55,7 @@ app.post(
     }
   },
 );
+app.post("/api/apple/webhook", express.json({ limit: "1mb" }), appleWebhook);
 
 app.use(
   cors({

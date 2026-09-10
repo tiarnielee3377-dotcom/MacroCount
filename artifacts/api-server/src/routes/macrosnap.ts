@@ -207,7 +207,7 @@ async function getSignedInAccountId(req: {
   return session.accountId;
 }
 
-async function getCurrentOwner(
+export async function getCurrentOwner(
   req: { cookies?: Record<string, string | undefined> },
   res: { cookie: (name: string, value: string, options: Record<string, unknown>) => void },
 ) {
@@ -664,8 +664,6 @@ router.put("/profile", async (req, res): Promise<void> => {
   res.json(SaveProfileResponse.parse(toProfileResponse(profile)));
 });
 
-router.use("/billing", requireBillingAvailability);
-
 router.get("/billing/entitlement", async (req, res): Promise<void> => {
   const ownerId = await getCurrentOwner(req, res);
   res.json(GetBillingEntitlementResponse.parse(await getBillingEntitlement(ownerId)));
@@ -686,7 +684,7 @@ router.post("/billing/simulate-trial-expired", async (req, res): Promise<void> =
   }
 });
 
-router.post("/billing/checkout", async (req, res): Promise<void> => {
+router.post("/billing/checkout", requireBillingAvailability, async (req, res): Promise<void> => {
   const parsed = CreateBillingCheckoutBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -703,7 +701,7 @@ router.post("/billing/checkout", async (req, res): Promise<void> => {
   }
 });
 
-router.post("/billing/portal", async (req, res): Promise<void> => {
+router.post("/billing/portal", requireBillingAvailability, async (req, res): Promise<void> => {
   try {
     const ownerId = await getCurrentOwner(req, res);
     const url = await createPortalSession(ownerId, getMacroCountOrigin());

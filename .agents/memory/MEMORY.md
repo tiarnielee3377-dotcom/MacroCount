@@ -8,3 +8,8 @@
 - [Deployment startup health](deployment-startup-health.md) — Bind the HTTP port before slow external-service initialization so publish probes can pass.
 - [Billing outage isolation](billing-outage-isolation.md) — Fail open for nutrition routes while Stripe initializes or recovers; billing routes must explicitly return retryable unavailability.
 - [Capacitor monorepo native paths](capacitor-monorepo-native-paths.md) — Repair generated iOS dependency paths after sync by resolving packages from the app workspace.
+- [GitHub API tree synchronization](github-api-tree-sync.md) — After partial API pushes, compare full local/remote trees and require root tree-SHA equality when resynchronizing.
+- [Cross-platform native lockfiles](cross-platform-native-lockfiles.md) — Keep macOS optional binaries in the lockfile when Codemagic builds iOS, even if Replit itself runs Linux.
+- [Codemagic iOS signing layout](codemagic-ios-signing-layout.md) — Use workflow-level App Store integration with manual signing scripts; CLI archives use build/ios paths.
+- [Capacitor API sessions](capacitor-api-sessions.md) — Native builds use an injected absolute API origin plus Capacitor native HTTP/cookies; keep native origins trusted explicitly.
+- [Apple subscription state ordering](apple-subscription-state-ordering.md) — Version transaction and renewal state separately; retain verified pre-claim revocations without granting ownership.

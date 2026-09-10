@@ -6,7 +6,9 @@ import {
   db,
   type BillingProfile,
 } from "@workspace/db";
+import { applePurchaseOwnershipTable, appleTransactionsTable } from "@workspace/db";
 import { getUncachableStripeClient } from "../stripeClient";
+import { getActiveAppleEntitlement } from "../appleBilling";
 
 const TRIAL_DURATION_MS = 3 * 24 * 60 * 60 * 1000;
 export const BILLING_UNAVAILABLE_MESSAGE =
@@ -197,14 +199,29 @@ export async function simulateTrialExpired(ownerId: string): Promise<BillingEnti
 }
 
 export async function moveBillingProfileToAccount(anonymousSessionId: string, accountId: string): Promise<void> {
-  if (!isBillingAvailable()) return;
-
   await db.transaction(async (tx) => {
+    for (const ownerId of [anonymousSessionId, accountId].sort()) {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${ownerId}, 0))`);
+    }
+    const appleOriginals = await tx.select({ originalTransactionId: applePurchaseOwnershipTable.originalTransactionId })
+      .from(applePurchaseOwnershipTable).where(eq(applePurchaseOwnershipTable.ownerId, anonymousSessionId));
+    for (const { originalTransactionId } of appleOriginals.sort((a, b) => a.originalTransactionId.localeCompare(b.originalTransactionId))) {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${originalTransactionId}, 0))`);
+    }
     const [anonymousBilling] = await tx
       .select()
       .from(billingProfilesTable)
       .where(eq(billingProfilesTable.ownerId, anonymousSessionId));
-    if (!anonymousBilling) return;
+    if (!anonymousBilling) {
+      await tx.update(applePurchaseOwnershipTable).set({ ownerId: accountId, updatedAt: new Date() })
+        .where(eq(applePurchaseOwnershipTable.ownerId, anonymousSessionId));
+      await tx.update(appleTransactionsTable).set({ ownerId: accountId, updatedAt: new Date() })
+        .where(eq(appleTransactionsTable.ownerId, anonymousSessionId));
+      await tx.insert(billingOwnerAliasesTable)
+        .values({ aliasOwnerId: anonymousSessionId, billingOwnerId: accountId })
+        .onConflictDoUpdate({ target: billingOwnerAliasesTable.aliasOwnerId, set: { billingOwnerId: accountId } });
+      return;
+    }
 
     const [accountBilling] = await tx
       .select()
@@ -220,6 +237,14 @@ export async function moveBillingProfileToAccount(anonymousSessionId: string, ac
         .update(billingCustomerLinksTable)
         .set({ ownerId: accountId })
         .where(eq(billingCustomerLinksTable.ownerId, anonymousSessionId));
+      await tx
+        .update(applePurchaseOwnershipTable)
+        .set({ ownerId: accountId, updatedAt: new Date() })
+        .where(eq(applePurchaseOwnershipTable.ownerId, anonymousSessionId));
+      await tx
+        .update(appleTransactionsTable)
+        .set({ ownerId: accountId, updatedAt: new Date() })
+        .where(eq(appleTransactionsTable.ownerId, anonymousSessionId));
       await tx
         .insert(billingOwnerAliasesTable)
         .values({ aliasOwnerId: anonymousSessionId, billingOwnerId: accountId })
@@ -258,6 +283,14 @@ export async function moveBillingProfileToAccount(anonymousSessionId: string, ac
       })
       .where(eq(billingProfilesTable.ownerId, accountId));
     await tx.delete(billingCustomerLinksTable).where(eq(billingCustomerLinksTable.ownerId, anonymousSessionId));
+    await tx
+      .update(applePurchaseOwnershipTable)
+      .set({ ownerId: accountId, updatedAt: new Date() })
+      .where(eq(applePurchaseOwnershipTable.ownerId, anonymousSessionId));
+    await tx
+      .update(appleTransactionsTable)
+      .set({ ownerId: accountId, updatedAt: new Date() })
+      .where(eq(appleTransactionsTable.ownerId, anonymousSessionId));
     await tx.delete(billingProfilesTable).where(eq(billingProfilesTable.ownerId, anonymousSessionId));
     await tx
       .insert(billingOwnerAliasesTable)
@@ -270,12 +303,33 @@ export async function moveBillingProfileToAccount(anonymousSessionId: string, ac
 }
 
 export async function getBillingEntitlement(ownerId: string): Promise<BillingEntitlement> {
-  if (!isBillingAvailable()) {
-    return getBillingUnavailableEntitlement();
+  let profile: BillingProfile | null;
+  try {
+    profile = await getBillingProfile(ownerId);
+  } catch (error) {
+    if (!isBillingAvailable()) return getBillingUnavailableEntitlement();
+    throw error;
   }
 
-  const profile = await getBillingProfile(ownerId);
   if (!profile) {
+    let apple;
+    try {
+      apple = await getActiveAppleEntitlement(ownerId);
+    } catch (error) {
+      if (!isBillingAvailable()) return getBillingUnavailableEntitlement();
+      throw error;
+    }
+    if (apple) {
+      return {
+        status: "active",
+        hasAccess: true,
+        trialEndsAt: null,
+        plan: apple.plan,
+        subscriptionStatus: "active",
+        currentPeriodEndsAt: apple.endsAt?.toISOString() ?? null,
+        canManage: false,
+      };
+    }
     return {
       status: "not_started",
       hasAccess: true,
@@ -288,6 +342,27 @@ export async function getBillingEntitlement(ownerId: string): Promise<BillingEnt
   }
 
   const trialEndsAt = new Date(profile.trialStartedAt.getTime() + TRIAL_DURATION_MS);
+  if (!isBillingAvailable()) {
+    let apple;
+    try {
+      apple = await getActiveAppleEntitlement(profile.ownerId);
+    } catch {
+      return getBillingUnavailableEntitlement();
+    }
+    if (apple) {
+      return {
+        status: "active",
+        hasAccess: true,
+        trialEndsAt: trialEndsAt.toISOString(),
+        plan: apple.plan,
+        subscriptionStatus: "active",
+        currentPeriodEndsAt: apple.endsAt?.toISOString() ?? null,
+        canManage: false,
+      };
+    }
+    return getBillingUnavailableEntitlement();
+  }
+
   const customerIds = await getCustomerIds(profile.ownerId, profile);
   const { active: activeSubscription, latest: latestSubscription } =
     await getSubscriptionForCustomers(customerIds);
@@ -301,6 +376,19 @@ export async function getBillingEntitlement(ownerId: string): Promise<BillingEnt
       subscriptionStatus: activeSubscription.status,
       currentPeriodEndsAt: dateFromStripeTimestamp(activeSubscription.current_period_end),
       canManage: true,
+    };
+  }
+
+  const apple = await getActiveAppleEntitlement(profile.ownerId);
+  if (apple) {
+    return {
+      status: "active",
+      hasAccess: true,
+      trialEndsAt: trialEndsAt.toISOString(),
+      plan: apple.plan,
+      subscriptionStatus: "active",
+      currentPeriodEndsAt: apple.endsAt?.toISOString() ?? null,
+      canManage: customerIds.length > 0,
     };
   }
 

@@ -23,6 +23,12 @@ import type {
   AccountCredentials,
   AccountProfilePreference,
   AccountStatus,
+  AppleRestoreInput,
+  AppleRestoreResponse,
+  AppleVerification,
+  AppleVerifyInput,
+  AppleWebhookInput,
+  AppleWebhookResponse,
   BillingCheckoutInput,
   BillingEntitlement,
   BillingRedirect,
@@ -2124,5 +2130,218 @@ export const useCreateBillingPortal = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateBillingPortalMutationOptions(options));
+    }
+
+export const getVerifyAppleTransactionUrl = () => {
+
+
+
+
+  return `/api/billing/apple/transaction`
+}
+
+/**
+ * @summary Verify and claim an App Store subscription transaction
+ */
+export const verifyAppleTransaction = async (appleVerifyInput: AppleVerifyInput, options?: Parameters<typeof customFetch>[1]): Promise<AppleVerification> => {
+
+  return customFetch<AppleVerification>(getVerifyAppleTransactionUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(appleVerifyInput)
+  }
+);}
+
+
+
+
+
+export const getVerifyAppleTransactionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyAppleTransaction>>, TError,{data: BodyType<AppleVerifyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof verifyAppleTransaction>>, TError,{data: BodyType<AppleVerifyInput>}, TContext> => {
+
+const mutationKey = ['verifyAppleTransaction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof verifyAppleTransaction>>, {data: BodyType<AppleVerifyInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  verifyAppleTransaction(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VerifyAppleTransactionMutationResult = NonNullable<Awaited<ReturnType<typeof verifyAppleTransaction>>>
+    export type VerifyAppleTransactionMutationBody = BodyType<AppleVerifyInput>
+    export type VerifyAppleTransactionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Verify and claim an App Store subscription transaction
+ */
+export const useVerifyAppleTransaction = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof verifyAppleTransaction>>, TError,{data: BodyType<AppleVerifyInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof verifyAppleTransaction>>,
+        TError,
+        {data: BodyType<AppleVerifyInput>},
+        TContext
+      > => {
+      return useMutation(getVerifyAppleTransactionMutationOptions(options));
+    }
+
+export const getRestoreAppleTransactionsUrl = () => {
+
+
+
+
+  return `/api/billing/apple/restore`
+}
+
+/**
+ * @summary Restore verified App Store subscription transactions
+ */
+export const restoreAppleTransactions = async (appleRestoreInput: AppleRestoreInput, options?: Parameters<typeof customFetch>[1]): Promise<AppleRestoreResponse> => {
+
+  return customFetch<AppleRestoreResponse>(getRestoreAppleTransactionsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(appleRestoreInput)
+  }
+);}
+
+
+
+
+
+export const getRestoreAppleTransactionsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreAppleTransactions>>, TError,{data: BodyType<AppleRestoreInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof restoreAppleTransactions>>, TError,{data: BodyType<AppleRestoreInput>}, TContext> => {
+
+const mutationKey = ['restoreAppleTransactions'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof restoreAppleTransactions>>, {data: BodyType<AppleRestoreInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  restoreAppleTransactions(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RestoreAppleTransactionsMutationResult = NonNullable<Awaited<ReturnType<typeof restoreAppleTransactions>>>
+    export type RestoreAppleTransactionsMutationBody = BodyType<AppleRestoreInput>
+    export type RestoreAppleTransactionsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Restore verified App Store subscription transactions
+ */
+export const useRestoreAppleTransactions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof restoreAppleTransactions>>, TError,{data: BodyType<AppleRestoreInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof restoreAppleTransactions>>,
+        TError,
+        {data: BodyType<AppleRestoreInput>},
+        TContext
+      > => {
+      return useMutation(getRestoreAppleTransactionsMutationOptions(options));
+    }
+
+export const getReceiveAppleWebhookUrl = () => {
+
+
+
+
+  return `/api/apple/webhook`
+}
+
+/**
+ * @summary Receive an App Store Server Notification
+ */
+export const receiveAppleWebhook = async (appleWebhookInput: AppleWebhookInput, options?: Parameters<typeof customFetch>[1]): Promise<AppleWebhookResponse> => {
+
+  return customFetch<AppleWebhookResponse>(getReceiveAppleWebhookUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(appleWebhookInput)
+  }
+);}
+
+
+
+
+
+export const getReceiveAppleWebhookMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveAppleWebhook>>, TError,{data: BodyType<AppleWebhookInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof receiveAppleWebhook>>, TError,{data: BodyType<AppleWebhookInput>}, TContext> => {
+
+const mutationKey = ['receiveAppleWebhook'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof receiveAppleWebhook>>, {data: BodyType<AppleWebhookInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  receiveAppleWebhook(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReceiveAppleWebhookMutationResult = NonNullable<Awaited<ReturnType<typeof receiveAppleWebhook>>>
+    export type ReceiveAppleWebhookMutationBody = BodyType<AppleWebhookInput>
+    export type ReceiveAppleWebhookMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Receive an App Store Server Notification
+ */
+export const useReceiveAppleWebhook = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receiveAppleWebhook>>, TError,{data: BodyType<AppleWebhookInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof receiveAppleWebhook>>,
+        TError,
+        {data: BodyType<AppleWebhookInput>},
+        TContext
+      > => {
+      return useMutation(getReceiveAppleWebhookMutationOptions(options));
     }
 

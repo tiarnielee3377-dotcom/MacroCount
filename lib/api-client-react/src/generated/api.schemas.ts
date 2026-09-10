@@ -5,6 +5,48 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface AppleWebhookInput {
+  /** @minLength 1 */
+  signedPayload: string;
+}
+
+export const AppleWebhookResponseValue = {
+  received: true,
+} as const;
+export type AppleWebhookResponse = typeof AppleWebhookResponseValue;
+
+export interface AppleVerifyInput {
+  /** @minLength 1 */
+  signedTransaction: string;
+}
+
+export interface AppleRestoreInput {
+  /**
+     * @minItems 1
+     * @maxItems 100
+     * @items.minLength 1
+     */
+  signedTransactions: string[];
+}
+
+export type AppleVerificationPlan = typeof AppleVerificationPlan[keyof typeof AppleVerificationPlan];
+
+
+export const AppleVerificationPlan = {
+  weekly: 'weekly',
+  monthly: 'monthly',
+  yearly: 'yearly',
+} as const;
+
+export interface AppleVerification {
+  plan: AppleVerificationPlan;
+  originalTransactionId: string;
+}
+
+export interface AppleRestoreResponse {
+  restored: AppleVerification[];
+}
+
 export interface HealthStatus {
   status: string;
 }

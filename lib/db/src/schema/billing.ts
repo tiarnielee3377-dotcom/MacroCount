@@ -1,4 +1,4 @@
-import { text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, index, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { pgTable } from "drizzle-orm/pg-core";
 
 /**
@@ -55,3 +55,51 @@ export const billingCustomerLinksTable = pgTable(
     uniqueIndex("billing_customer_links_customer_unique").on(table.stripeCustomerId),
   ],
 );
+
+/** The immutable App Store subscription family belongs to one billing owner. */
+export const applePurchaseOwnershipTable = pgTable("apple_purchase_ownership", {
+  originalTransactionId: text("original_transaction_id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  environment: text("environment").notNull(),
+  productId: text("product_id").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Verified Apple transaction snapshots. Signed data is never trusted until decoded by Apple’s verifier. */
+export const appleTransactionsTable = pgTable(
+  "apple_transactions",
+  {
+    transactionId: text("transaction_id").primaryKey(),
+    originalTransactionId: text("original_transaction_id").notNull(),
+    ownerId: text("owner_id"),
+    productId: text("product_id").notNull(),
+    environment: text("environment").notNull(),
+    purchasedAt: timestamp("purchased_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    gracePeriodExpiresAt: timestamp("grace_period_expires_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    isInBillingRetry: boolean("is_in_billing_retry").notNull().default(false),
+    stateSignedAt: timestamp("state_signed_at", { withTimezone: true }).notNull(),
+    renewalStateSignedAt: timestamp("renewal_state_signed_at", { withTimezone: true }),
+    rawSignedTransaction: text("raw_signed_transaction").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("apple_transactions_original_transaction_unique").on(
+      table.originalTransactionId,
+      table.transactionId,
+    ),
+    index("apple_transactions_owner_expiry_index").on(table.ownerId, table.expiresAt),
+  ],
+);
+
+export const appleNotificationDeliveriesTable = pgTable("apple_notification_deliveries", {
+  notificationUuid: text("notification_uuid").primaryKey(),
+  notificationType: text("notification_type"),
+  subtype: text("subtype"),
+  signedAt: timestamp("signed_at", { withTimezone: true }),
+  environment: text("environment"),
+  receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+});

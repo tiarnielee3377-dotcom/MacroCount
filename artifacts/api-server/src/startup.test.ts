@@ -84,11 +84,7 @@ describe("production startup", () => {
     const response = await request(startup.server).get("/api/healthz");
     expect(response.status).toBe(200);
     expect(await request(startup.server).get("/api/billing/entitlement")).toMatchObject({
-      status: 503,
-      body: {
-        code: "BILLING_UNAVAILABLE",
-        retryable: true,
-      },
+      status: 200,
     });
   });
 
