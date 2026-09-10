@@ -35,9 +35,13 @@ export default function Profile() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const timeZone = getDeviceTimeZone();
-  const [accountMode, setAccountMode] = useState<"register" | "login" | null>(() =>
-    new URLSearchParams(window.location.search).get("account") === "login" ? "login" : null,
-  );
+  const accountRequest = new URLSearchParams(window.location.search).get("account");
+  const returnAfterAccountChange =
+    new URLSearchParams(window.location.search).get("next") === "/billing" ? "/billing" : "/dashboard";
+  const [accountMode, setAccountMode] = useState<"register" | "login" | null>(() => {
+    if (accountRequest === "login" || accountRequest === "register") return accountRequest;
+    return null;
+  });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [accountError, setAccountError] = useState<string | null>(null);
@@ -77,7 +81,7 @@ export default function Profile() {
     clearDashboardSnapshots();
     await cancelDailyStreakReminder();
     await queryClient.invalidateQueries();
-    setLocation("/dashboard");
+    setLocation(returnAfterAccountChange);
   };
 
   const handleAccountSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -293,8 +297,7 @@ export default function Profile() {
                 )}
               </div>
 
-               {entitlement && entitlement.status !== "not_started" && (
-                 <div className="rounded-3xl border border-card-border bg-card p-5">
+               <div className="rounded-3xl border border-card-border bg-card p-5">
                    <div className="flex items-start gap-3">
                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                        <CreditCard className="h-5 w-5" />
@@ -302,37 +305,46 @@ export default function Profile() {
                      <div className="min-w-0 flex-1">
                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Membership</p>
                        <h2 className="mt-1 font-display text-xl font-bold text-foreground">
-                         {entitlement.status === "active"
+                          {entitlement?.status === "active"
                             ? `${entitlement.plan === "yearly" ? "Yearly" : entitlement.plan === "monthly" ? "Monthly" : "Weekly"} Premium`
-                           : entitlement.status === "trialing"
+                            : entitlement?.status === "trialing"
                              ? "Three-day free trial"
-                             : "Trial complete"}
+                              : entitlement?.status === "expired"
+                                ? "Trial complete"
+                                : "Plans & Pricing"}
                        </h2>
                        <p className="mt-2 text-sm leading-5 text-muted-foreground">
-                         {entitlement.status === "active"
+                          {entitlement?.status === "active"
                            ? "Your Premium access is active."
-                           : entitlement.status === "trialing" && entitlement.trialEndsAt
+                            : entitlement?.status === "trialing" && entitlement.trialEndsAt
                              ? `Your trial ends ${new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(entitlement.trialEndsAt))}.`
-                             : "Choose a plan to continue using MacroCount."}
+                              : entitlement?.status === "expired"
+                                ? "Choose a plan to continue using MacroCount."
+                                : "Explore Premium features and compare weekly, monthly, and yearly plans."}
                        </p>
                      </div>
                    </div>
-                   {entitlement.canManage ? (
-                     <button
-                       type="button"
-                       onClick={handleBillingPortal}
-                       disabled={portal.isPending}
-                       className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-secondary font-bold text-secondary-foreground disabled:opacity-60"
-                     >
-                       {portal.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CreditCard className="h-4 w-4" /> Manage subscription</>}
-                     </button>
+                   {entitlement?.canManage ? (
+                      <div className="mt-5 space-y-3">
+                        <button
+                          type="button"
+                          onClick={handleBillingPortal}
+                          disabled={portal.isPending}
+                          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-secondary font-bold text-secondary-foreground disabled:opacity-60"
+                        >
+                          {portal.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CreditCard className="h-4 w-4" /> Manage subscription</>}
+                        </button>
+                        <Link href="/billing" className="flex h-11 w-full items-center justify-center rounded-2xl font-bold text-primary">
+                          View plans & pricing
+                        </Link>
+                      </div>
                    ) : (
                      <Link href="/billing" className="mt-5 flex h-12 w-full items-center justify-center rounded-2xl bg-primary font-bold text-primary-foreground">
-                       {entitlement.status === "expired" ? "Choose a plan" : "View plans"}
+                        {entitlement?.status === "expired" ? "Choose a plan" : entitlement?.status === "not_started" || !entitlement ? "Upgrade to Premium" : "View plans"}
                      </Link>
                    )}
                    {billingError && <p className="mt-3 text-sm font-medium text-destructive">{billingError}</p>}
-                    {import.meta.env.DEV && entitlement.status === "trialing" && (
+                    {import.meta.env.DEV && entitlement?.status === "trialing" && (
                       <div className="mt-5 rounded-2xl border border-dashed border-primary/35 bg-primary/5 p-4">
                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Development testing</p>
                         <p className="mt-1 text-sm leading-5 text-muted-foreground">
@@ -351,7 +363,6 @@ export default function Profile() {
                       </div>
                     )}
                  </div>
-               )}
 
               {profile && (
               <>

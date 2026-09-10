@@ -1,12 +1,15 @@
 import {
+  getGetAccountQueryKey,
+  getGetBillingEntitlementQueryKey,
   useCreateBillingCheckout,
   useCreateBillingPortal,
+  useGetAccount,
   useGetBillingEntitlement,
   useRestoreAppleTransactions,
   useVerifyAppleTransaction,
 } from "@workspace/api-client-react";
 import { Check, ChevronRight, Crown, Loader2, ShieldCheck, Sparkles } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { MobileLayout } from "@/components/layout";
 import {
@@ -38,12 +41,18 @@ function formatDate(value: string | null) {
 }
 
 export default function Billing() {
+  const [, setLocation] = useLocation();
   const usesAppleBilling = isNativeIOS();
   const checkout = useCreateBillingCheckout();
   const portal = useCreateBillingPortal();
   const verifyApple = useVerifyAppleTransaction();
   const restoreApple = useRestoreAppleTransactions();
-  const { data: entitlement, isLoading, refetch: refetchEntitlement } = useGetBillingEntitlement();
+  const { data: account, isLoading: isAccountLoading } = useGetAccount({
+    query: { queryKey: getGetAccountQueryKey(), retry: false },
+  });
+  const { data: entitlement, refetch: refetchEntitlement } = useGetBillingEntitlement({
+    query: { queryKey: getGetBillingEntitlementQueryKey(), retry: false },
+  });
   const [error, setError] = useState<string | null>(null);
   const [appleProducts, setAppleProducts] = useState<AppleProduct[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(usesAppleBilling);
@@ -133,6 +142,10 @@ export default function Billing() {
   };
 
   const startPurchase = (plan: Plan) => {
+    if (!account?.email) {
+      setLocation("/profile?account=register&next=/billing");
+      return;
+    }
     if (usesAppleBilling) {
       void startApplePurchase(plan);
     } else {
@@ -148,6 +161,7 @@ export default function Billing() {
   const trialEnd = formatDate(entitlement?.trialEndsAt ?? null);
   const isActive = entitlement?.status === "active";
   const isTrialing = entitlement?.status === "trialing";
+  const isExpired = entitlement?.status === "expired";
   const isAppleSubscription = entitlement?.provider === "apple";
 
   return (
@@ -169,22 +183,26 @@ export default function Billing() {
               <span className="text-xs font-bold uppercase tracking-[0.18em]">MacroCount Premium</span>
             </div>
             <h1 className="mt-3 font-display text-3xl font-bold leading-tight text-foreground">
-              {isActive ? "You’re all set." : isTrialing ? "Keep your momentum." : "Don’t lose your momentum."}
+              {isActive
+                ? "You’re all set."
+                : isTrialing
+                  ? "Keep your momentum."
+                  : isExpired
+                    ? "Don’t lose your momentum."
+                    : "Choose the plan that fits."}
             </h1>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
               {isActive
                 ? `Your ${entitlement?.plan ? planLabels[entitlement.plan] : "Premium"} membership is active.`
                 : isTrialing && trialEnd
                   ? `Your free trial is active through ${trialEnd}. Choose a plan whenever you’re ready.`
-                  : "Your three-day free trial has ended. Choose a plan to keep logging, planning, and progressing."}
+                   : isExpired
+                     ? "Your three-day free trial has ended. Choose a plan to keep logging, planning, and progressing."
+                     : "Compare all three Premium plans before creating an account or signing in."}
             </p>
           </div>
 
-          {isLoading ? (
-            <div className="mt-6 flex items-center justify-center py-12 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-            </div>
-          ) : isActive ? (
+          {isActive ? (
             <div className="mt-6 rounded-3xl border border-card-border bg-card p-5">
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent">
@@ -217,7 +235,7 @@ export default function Billing() {
                 <button
                   type="button"
                   onClick={() => startPurchase("yearly")}
-                  disabled={purchasePending || loadingProducts}
+                  disabled={purchasePending || loadingProducts || isAccountLoading}
                   className="relative w-full rounded-3xl border-2 border-primary bg-card p-5 text-left shadow-[0_12px_32px_rgba(255,107,53,0.14)] transition-transform active:scale-[0.99] disabled:opacity-60"
                 >
                   <span className="absolute -top-3 right-5 rounded-full bg-accent px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-accent-foreground">Best value</span>
@@ -236,7 +254,7 @@ export default function Billing() {
                 <button
                   type="button"
                   onClick={() => startPurchase("monthly")}
-                  disabled={purchasePending || loadingProducts}
+                  disabled={purchasePending || loadingProducts || isAccountLoading}
                   className="w-full rounded-3xl border border-card-border bg-card p-5 text-left transition-transform active:scale-[0.99] disabled:opacity-60"
                 >
                   <div className="flex items-end justify-between gap-3">
@@ -253,7 +271,7 @@ export default function Billing() {
                 <button
                   type="button"
                   onClick={() => startPurchase("weekly")}
-                  disabled={purchasePending || loadingProducts}
+                  disabled={purchasePending || loadingProducts || isAccountLoading}
                   className="w-full rounded-3xl border border-card-border bg-card p-5 text-left transition-transform active:scale-[0.99] disabled:opacity-60"
                 >
                   <div className="flex items-end justify-between gap-3">
@@ -268,6 +286,11 @@ export default function Billing() {
                   </div>
                 </button>
               </div>
+              {!account?.email && (
+                <p className="mt-4 text-center text-sm leading-5 text-muted-foreground">
+                  Pricing is available to everyone. You’ll be asked to create an account or sign in when you subscribe.
+                </p>
+              )}
               {purchasePending && (
                 <p className="mt-4 flex items-center justify-center gap-2 text-sm font-semibold text-primary">
                   <Loader2 className="h-4 w-4 animate-spin" /> {usesAppleBilling ? "Completing App Store purchase…" : "Opening secure Checkout…"}
