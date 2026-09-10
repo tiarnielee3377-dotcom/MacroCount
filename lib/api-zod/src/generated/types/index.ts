@@ -25,6 +25,7 @@ export * from './billingCheckoutInput';
 export * from './billingCheckoutInputPlan';
 export * from './billingEntitlement';
 export * from './billingEntitlementPlan';
+export * from './billingEntitlementProvider';
 export * from './billingEntitlementStatus';
 export * from './billingRedirect';
 export * from './dailyChallenge';

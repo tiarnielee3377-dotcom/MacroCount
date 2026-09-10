@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { BillingEntitlementPlan } from './billingEntitlementPlan';
+import type { BillingEntitlementProvider } from './billingEntitlementProvider';
 import type { BillingEntitlementStatus } from './billingEntitlementStatus';
 
 export interface BillingEntitlement {
@@ -20,4 +21,6 @@ export interface BillingEntitlement {
   /** @nullable */
   currentPeriodEndsAt: string | null;
   canManage: boolean;
+  /** @nullable */
+  provider: BillingEntitlementProvider;
 }

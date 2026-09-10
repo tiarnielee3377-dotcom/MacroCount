@@ -578,7 +578,8 @@ export const GetBillingEntitlementResponse = zod.object({
   "plan": zod.union([zod.literal('weekly'),zod.literal('monthly'),zod.literal('yearly'),zod.literal(null)]).nullable(),
   "subscriptionStatus": zod.string().nullable(),
   "currentPeriodEndsAt": zod.string().nullable(),
-  "canManage": zod.boolean()
+  "canManage": zod.boolean(),
+  "provider": zod.union([zod.literal('apple'),zod.literal('stripe'),zod.literal(null)]).nullable()
 })
 
 
@@ -592,7 +593,8 @@ export const SimulateTrialExpiredResponse = zod.object({
   "plan": zod.union([zod.literal('weekly'),zod.literal('monthly'),zod.literal('yearly'),zod.literal(null)]).nullable(),
   "subscriptionStatus": zod.string().nullable(),
   "currentPeriodEndsAt": zod.string().nullable(),
-  "canManage": zod.boolean()
+  "canManage": zod.boolean(),
+  "provider": zod.union([zod.literal('apple'),zod.literal('stripe'),zod.literal(null)]).nullable()
 })
 
 

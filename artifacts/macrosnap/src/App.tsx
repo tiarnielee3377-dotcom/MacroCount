@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
-import { getGetBillingEntitlementQueryKey, useGetBillingEntitlement } from '@workspace/api-client-react';
+import {
+  getGetBillingEntitlementQueryKey,
+  useGetBillingEntitlement,
+  verifyAppleTransaction,
+} from '@workspace/api-client-react';
 import Dashboard from './pages/dashboard';
 import Billing from './pages/billing';
 import Onboarding from './pages/onboarding';
@@ -13,8 +17,59 @@ import Workouts from './pages/workouts';
 import WorkoutFlow from './pages/workout-flow';
 import { getDeviceTimeZone } from "@/lib/day";
 import { readDashboardSnapshot } from "@/lib/offline-dashboard";
+import {
+  addAppleTransactionListener,
+  finishAppleTransaction,
+  isNativeIOS,
+  recoverApplePurchases,
+} from "@/lib/apple-store";
 
 const queryClient = new QueryClient();
+
+function AppleTransactionRecovery() {
+  useEffect(() => {
+    if (!isNativeIOS()) return;
+
+    let stopped = false;
+    let listener: Awaited<ReturnType<typeof addAppleTransactionListener>> | undefined;
+    const retryTimers = new Set<ReturnType<typeof setTimeout>>();
+    const attempts = new Map<string, number>();
+
+    const submit = async (transaction: { transactionId: string; signedTransaction: string }) => {
+      if (stopped) return;
+      try {
+        await verifyAppleTransaction({ signedTransaction: transaction.signedTransaction });
+        await finishAppleTransaction(transaction.transactionId);
+        attempts.delete(transaction.transactionId);
+        await queryClient.invalidateQueries({ queryKey: getGetBillingEntitlementQueryKey() });
+      } catch {
+        const attempt = (attempts.get(transaction.transactionId) ?? 0) + 1;
+        attempts.set(transaction.transactionId, attempt);
+        const delay = Math.min(60_000, 2 ** Math.min(attempt, 6) * 1_000);
+        const timer = setTimeout(() => {
+          retryTimers.delete(timer);
+          void submit(transaction);
+        }, delay);
+        retryTimers.add(timer);
+      }
+    };
+
+    void addAppleTransactionListener((transaction) => void submit(transaction)).then((handle) => {
+      listener = handle;
+    });
+    void recoverApplePurchases().then((transactions) => {
+      for (const transaction of transactions) void submit(transaction);
+    });
+
+    return () => {
+      stopped = true;
+      void listener?.remove();
+      for (const timer of retryTimers) clearTimeout(timer);
+    };
+  }, []);
+
+  return null;
+}
 
 // Basic fallback for unknown routes
 function NotFound() {
@@ -84,6 +139,7 @@ function EntitlementRouter() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <AppleTransactionRecovery />
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
         <EntitlementRouter />
       </WouterRouter>

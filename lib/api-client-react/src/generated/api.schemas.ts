@@ -421,6 +421,17 @@ export const BillingEntitlementPlan = {
   yearly: 'yearly',
 } as const;
 
+/**
+ * @nullable
+ */
+export type BillingEntitlementProvider = typeof BillingEntitlementProvider[keyof typeof BillingEntitlementProvider] | null;
+
+
+export const BillingEntitlementProvider = {
+  apple: 'apple',
+  stripe: 'stripe',
+} as const;
+
 export interface BillingEntitlement {
   status: BillingEntitlementStatus;
   hasAccess: boolean;
@@ -433,6 +444,8 @@ export interface BillingEntitlement {
   /** @nullable */
   currentPeriodEndsAt: string | null;
   canManage: boolean;
+  /** @nullable */
+  provider: BillingEntitlementProvider;
 }
 
 export type BillingCheckoutInputPlan = typeof BillingCheckoutInputPlan[keyof typeof BillingCheckoutInputPlan];

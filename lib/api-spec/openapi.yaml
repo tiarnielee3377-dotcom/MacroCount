@@ -1052,6 +1052,9 @@ components:
           type: ["string", "null"]
         canManage:
           type: boolean
+        provider:
+          type: ["string", "null"]
+          enum: [apple, stripe, null]
       required:
         - status
         - hasAccess
@@ -1060,6 +1063,7 @@ components:
         - subscriptionStatus
         - currentPeriodEndsAt
         - canManage
+        - provider
     BillingCheckoutInput:
       type: object
       properties:

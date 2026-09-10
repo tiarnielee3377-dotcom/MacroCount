@@ -46,6 +46,7 @@ export function getBillingUnavailableEntitlement(): BillingEntitlement {
     subscriptionStatus: null,
     currentPeriodEndsAt: null,
     canManage: false,
+    provider: null,
   };
 }
 
@@ -76,6 +77,7 @@ export type BillingEntitlement = {
   subscriptionStatus: string | null;
   currentPeriodEndsAt: string | null;
   canManage: boolean;
+  provider: "apple" | "stripe" | null;
 };
 
 type SyncedSubscription = {
@@ -328,6 +330,7 @@ export async function getBillingEntitlement(ownerId: string): Promise<BillingEnt
         subscriptionStatus: "active",
         currentPeriodEndsAt: apple.endsAt?.toISOString() ?? null,
         canManage: false,
+        provider: "apple",
       };
     }
     return {
@@ -338,6 +341,7 @@ export async function getBillingEntitlement(ownerId: string): Promise<BillingEnt
       subscriptionStatus: null,
       currentPeriodEndsAt: null,
       canManage: false,
+      provider: null,
     };
   }
 
@@ -358,6 +362,7 @@ export async function getBillingEntitlement(ownerId: string): Promise<BillingEnt
         subscriptionStatus: "active",
         currentPeriodEndsAt: apple.endsAt?.toISOString() ?? null,
         canManage: false,
+        provider: "apple",
       };
     }
     return getBillingUnavailableEntitlement();
@@ -376,6 +381,7 @@ export async function getBillingEntitlement(ownerId: string): Promise<BillingEnt
       subscriptionStatus: activeSubscription.status,
       currentPeriodEndsAt: dateFromStripeTimestamp(activeSubscription.current_period_end),
       canManage: true,
+      provider: "stripe",
     };
   }
 
@@ -389,6 +395,7 @@ export async function getBillingEntitlement(ownerId: string): Promise<BillingEnt
       subscriptionStatus: "active",
       currentPeriodEndsAt: apple.endsAt?.toISOString() ?? null,
       canManage: customerIds.length > 0,
+      provider: "apple",
     };
   }
 
@@ -401,6 +408,7 @@ export async function getBillingEntitlement(ownerId: string): Promise<BillingEnt
       subscriptionStatus: latestSubscription?.status ?? null,
       currentPeriodEndsAt: dateFromStripeTimestamp(latestSubscription?.current_period_end ?? null),
       canManage: customerIds.length > 0,
+      provider: null,
     };
   }
 
@@ -412,6 +420,7 @@ export async function getBillingEntitlement(ownerId: string): Promise<BillingEnt
     subscriptionStatus: latestSubscription?.status ?? null,
     currentPeriodEndsAt: dateFromStripeTimestamp(latestSubscription?.current_period_end ?? null),
     canManage: customerIds.length > 0,
+    provider: null,
   };
 }
 

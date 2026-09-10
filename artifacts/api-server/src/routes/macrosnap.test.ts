@@ -52,6 +52,7 @@ type MockBillingEntitlement = {
   subscriptionStatus: string | null;
   currentPeriodEndsAt: string | null;
   canManage: boolean;
+  provider: "apple" | "stripe" | null;
 };
 
 const defaultBillingEntitlement: MockBillingEntitlement = {
@@ -62,6 +63,7 @@ const defaultBillingEntitlement: MockBillingEntitlement = {
   subscriptionStatus: null,
   currentPeriodEndsAt: null,
   canManage: false,
+  provider: null,
 };
 let billingEntitlement = defaultBillingEntitlement;
 let billingAvailable = true;
@@ -741,6 +743,7 @@ describe("billing access boundaries", () => {
       subscriptionStatus: null,
       currentPeriodEndsAt: null,
       canManage: false,
+      provider: null,
     };
 
     try {
@@ -783,6 +786,7 @@ describe("billing access boundaries", () => {
       subscriptionStatus: "canceled",
       currentPeriodEndsAt: null,
       canManage: false,
+      provider: null,
     };
 
     const profile = await request(app)
@@ -807,6 +811,7 @@ describe("billing access boundaries", () => {
       subscriptionStatus: "canceled",
       currentPeriodEndsAt: null,
       canManage: true,
+      provider: null,
     };
     vi.stubEnv("REPLIT_DOMAINS", "macrocount.test");
 
