@@ -425,6 +425,16 @@ paths:
       responses:
         "204":
           description: Signed out
+  /account/delete:
+    post:
+      operationId: deleteAccount
+      tags: [account]
+      summary: Permanently delete the signed-in account and all associated data
+      responses:
+        "204":
+          description: Account and all associated data deleted
+        "401":
+          description: No account is signed in
   /account/profile-preference:
     post:
       operationId: saveAccountProfilePreference

@@ -7,6 +7,7 @@ import {
   useLogoutAccount,
   useRegisterAccount,
   useSaveAccountProfilePreference,
+  useDeleteAccount,
   getGetProfileQueryKey,
   getGetProgressQueryKey,
   getGetBillingEntitlementQueryKey,
@@ -16,7 +17,7 @@ import {
 } from "@workspace/api-client-react";
 import { MobileLayout } from "@/components/layout";
 import { BottomNav } from "@/components/bottom-nav";
-import { Award, CalendarDays, CreditCard, Flame, Loader2, Lock, LogOut, RotateCcw, ShieldCheck, Target, TimerOff, User, Utensils } from "lucide-react";
+import { AlertTriangle, Award, CalendarDays, CreditCard, Flame, Loader2, Lock, LogOut, RotateCcw, ShieldCheck, Target, TimerOff, Trash2, User, Utensils } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { getDeviceTimeZone } from "@/lib/day";
 import { useQueryClient } from "@tanstack/react-query";
@@ -60,6 +61,7 @@ export default function Profile() {
   const registerAccount = useRegisterAccount();
   const loginAccount = useLoginAccount();
   const logoutAccount = useLogoutAccount();
+  const deleteAccount = useDeleteAccount();
   const saveProfilePreference = useSaveAccountProfilePreference();
   const { data: entitlement } = useGetBillingEntitlement({
     query: { queryKey: getGetBillingEntitlementQueryKey(), retry: false },
@@ -68,6 +70,8 @@ export default function Profile() {
   const simulateTrialExpired = useSimulateTrialExpired();
   const [billingError, setBillingError] = useState<string | null>(null);
   const [trialSimulationError, setTrialSimulationError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const isSubmitting = registerAccount.isPending || loginAccount.isPending;
 
@@ -108,6 +112,19 @@ export default function Profile() {
     logoutAccount.mutate(undefined, {
       onSuccess: () => {
         void refreshForAccountChange();
+      },
+    });
+  };
+
+  const handleDeleteAccount = () => {
+    setDeleteError(null);
+    deleteAccount.mutate(undefined, {
+      onSuccess: () => {
+        setShowDeleteConfirm(false);
+        void refreshForAccountChange();
+      },
+      onError: (error) => {
+        setDeleteError(error instanceof Error ? error.message : "We couldn't delete your account. Please try again.");
       },
     });
   };
@@ -203,6 +220,53 @@ export default function Profile() {
                       {logoutAccount.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
                       Sign out on this device
                     </button>
+
+                    {showDeleteConfirm ? (
+                      <div className="mt-5 rounded-2xl border border-destructive/30 bg-destructive/10 p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
+                          <div>
+                            <h3 className="font-display text-base font-bold text-foreground">Delete your account?</h3>
+                            <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                              This permanently deletes your account and all of your data — meals, streaks, achievements, workouts, recipes, and subscription records. This can't be undone.
+                            </p>
+                          </div>
+                        </div>
+                        {deleteError && <p className="mt-3 text-sm font-medium text-destructive">{deleteError}</p>}
+                        <div className="mt-4 flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowDeleteConfirm(false);
+                              setDeleteError(null);
+                            }}
+                            disabled={deleteAccount.isPending}
+                            className="h-11 flex-1 rounded-2xl bg-secondary font-bold text-secondary-foreground disabled:opacity-60"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleDeleteAccount}
+                            disabled={deleteAccount.isPending}
+                            className="flex h-11 flex-1 items-center justify-center gap-2 rounded-2xl bg-destructive font-bold text-destructive-foreground disabled:opacity-60"
+                          >
+                            {deleteAccount.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            Yes, delete
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-destructive/30 font-bold text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete account
+                      </button>
+                    )}
+
                     {account.pendingProfile && (
                       <div className="mt-5 rounded-2xl border border-primary/25 bg-primary/10 p-4">
                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Choose daily targets</p>

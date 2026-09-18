@@ -548,6 +548,12 @@ export const LogoutAccountResponse = zod.void()
 
 
 /**
+ * @summary Permanently delete the signed-in account and all associated data
+ */
+export const DeleteAccountResponse = zod.void()
+
+
+/**
  * @summary Choose account or local targets after a profile conflict
  */
 export const SaveAccountProfilePreferenceBody = zod.object({

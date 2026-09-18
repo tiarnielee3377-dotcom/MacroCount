@@ -52,6 +52,10 @@ import {
 import {
   accountSessionsTable,
   accountsTable,
+  appleTransactionsTable,
+  applePurchaseOwnershipTable,
+  billingCustomerLinksTable,
+  billingProfilesTable,
   db,
   mealsTable,
   nutritionProfilesTable,
@@ -564,6 +568,45 @@ router.post("/account/logout", async (req, res): Promise<void> => {
   if (sessionToken) {
     await db.delete(accountSessionsTable).where(eq(accountSessionsTable.id, sessionToken));
   }
+  res.clearCookie(ACCOUNT_SESSION_COOKIE, accountCookieOptions());
+  res.sendStatus(204);
+});
+
+router.post("/account/delete", async (req, res): Promise<void> => {
+  if (rejectUntrustedAccountMutation(req, res)) return;
+  const accountId = await getSignedInAccountId(req);
+  if (!accountId) {
+    res.status(401).json({ error: "No account is signed in." });
+    return;
+  }
+
+  await db.transaction(async (tx) => {
+    // Data tables are keyed by session/owner id, which is overwritten to equal
+    // accountId once a device is linked to this account (see linkAnonymousProgress
+    // and moveBillingProfileToAccount), so deleting by accountId covers them.
+    await tx.delete(mealsTable).where(eq(mealsTable.sessionId, accountId));
+    await tx.delete(workoutCompletionsTable).where(eq(workoutCompletionsTable.sessionId, accountId));
+    await tx.delete(nutritionProfilesTable).where(eq(nutritionProfilesTable.sessionId, accountId));
+    await tx.delete(recipeMealPlanSlotsTable).where(eq(recipeMealPlanSlotsTable.sessionId, accountId));
+    await tx.delete(recipeGroceryChecksTable).where(eq(recipeGroceryChecksTable.sessionId, accountId));
+    await tx
+      .delete(profileTransferConflictsTable)
+      .where(eq(profileTransferConflictsTable.accountId, accountId));
+
+    await tx.delete(billingProfilesTable).where(eq(billingProfilesTable.ownerId, accountId));
+    await tx.delete(billingCustomerLinksTable).where(eq(billingCustomerLinksTable.ownerId, accountId));
+    await tx.delete(applePurchaseOwnershipTable).where(eq(applePurchaseOwnershipTable.ownerId, accountId));
+    // Keep verified Apple transaction records for financial/audit purposes, but
+    // detach them from the deleted account.
+    await tx
+      .update(appleTransactionsTable)
+      .set({ ownerId: null })
+      .where(eq(appleTransactionsTable.ownerId, accountId));
+
+    // accountSessionsTable rows cascade automatically via the FK.
+    await tx.delete(accountsTable).where(eq(accountsTable.id, accountId));
+  });
+
   res.clearCookie(ACCOUNT_SESSION_COOKIE, accountCookieOptions());
   res.sendStatus(204);
 });
