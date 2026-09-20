@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Camera as NativeCamera, CameraResultType, CameraSource } from "@capacitor/camera";
+import { Filesystem } from "@capacitor/filesystem";
 import {
   getListMealsQueryKey,
   getProgress,
@@ -35,10 +36,12 @@ export default function LogMeal() {
   const [, setLocation] = useLocation();
   const [description, setDescription] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [capturedPhotoPath, setCapturedPhotoPath] = useState<string | null>(null);
   const [estimate, setEstimate] = useState<MealEstimate | null>(null);
   const [portionScale, setPortionScale] = useState(1);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isPreparingImage, setIsPreparingImage] = useState(false);
 
   const analyzeMeal = useAnalyzeMeal();
   const createMeal = useCreateMeal();
@@ -61,17 +64,24 @@ export default function LogMeal() {
       const photo = await NativeCamera.getPhoto({
         quality: 80,
         allowEditing: false,
-        resultType: CameraResultType.DataUrl,
+        resultType: CameraResultType.Uri,
         source: CameraSource.Camera,
         correctOrientation: true,
         width: 1024,
         saveToGallery: false,
       });
 
-      if (!photo.dataUrl) {
+      if (!photo.webPath || !photo.path) {
         throw new Error("The camera did not return an image.");
       }
-      setImagePreview(photo.dataUrl);
+      // Uri result: the camera hands back a lightweight file reference instead of
+      // embedding the full image as base64 in the plugin response. That keeps the
+      // message crossing the native bridge tiny and avoids the webview losing this
+      // screen's state right as the photo comes back. webPath is just for on-screen
+      // preview; the heavier base64 read (for the AI analysis request) happens later,
+      // only if/when the user actually analyzes the meal.
+      setImagePreview(photo.webPath);
+      setCapturedPhotoPath(photo.path);
     } catch (error) {
       console.error("Camera capture failed", error);
       const message =
@@ -86,14 +96,30 @@ export default function LogMeal() {
     }
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (!description && !imagePreview) return;
     setErrorMessage(null);
-    
+
+    let imageData: string | null = null;
+    if (capturedPhotoPath) {
+      setIsPreparingImage(true);
+      try {
+        const file = await Filesystem.readFile({ path: capturedPhotoPath });
+        const base64 = typeof file.data === "string" ? file.data : "";
+        imageData = base64 ? `data:image/jpeg;base64,${base64}` : null;
+      } catch (error) {
+        console.error("Failed to read captured photo", error);
+        setErrorMessage("We couldn't read that photo. Try taking it again.");
+        setIsPreparingImage(false);
+        return;
+      }
+      setIsPreparingImage(false);
+    }
+
     analyzeMeal.mutate({
       data: {
         description: description || null,
-        imageData: imagePreview || null,
+        imageData,
       }
     }, {
       onSuccess: (data) => {
@@ -220,10 +246,11 @@ export default function LogMeal() {
                   {imagePreview ? (
                     <>
                       <img src={imagePreview} alt="Preview" className="w-full h-full object-cover opacity-90" />
-                      <button 
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setImagePreview(null);
+                          setCapturedPhotoPath(null);
                         }}
                         className="absolute top-4 right-4 w-10 h-10 bg-background/80 backdrop-blur-md rounded-2xl text-foreground flex items-center justify-center"
                       >
@@ -262,11 +289,16 @@ export default function LogMeal() {
 
                 {/* Analyze Button */}
                 <button
-                  onClick={handleAnalyze}
-                  disabled={(!description && !imagePreview) || analyzeMeal.isPending}
+                  onClick={() => void handleAnalyze()}
+                  disabled={(!description && !imagePreview) || analyzeMeal.isPending || isPreparingImage}
                   className="h-16 w-full mt-2 bg-primary text-primary-foreground rounded-2xl font-bold text-lg flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-all"
                 >
-                  {analyzeMeal.isPending ? (
+                  {isPreparingImage ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Preparing photo...
+                    </>
+                  ) : analyzeMeal.isPending ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
                       Analyzing...
