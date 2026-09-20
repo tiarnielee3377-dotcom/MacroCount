@@ -59,11 +59,13 @@ export default function LogMeal() {
     setIsCapturing(true);
     try {
       const photo = await NativeCamera.getPhoto({
-        quality: 85,
+        quality: 80,
         allowEditing: false,
         resultType: CameraResultType.DataUrl,
         source: CameraSource.Camera,
         correctOrientation: true,
+        width: 1024,
+        saveToGallery: false,
       });
 
       if (!photo.dataUrl) {
