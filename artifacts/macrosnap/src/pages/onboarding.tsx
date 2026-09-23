@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getGetBillingEntitlementQueryKey, useSaveProfile } from "@workspace/api-client-react";
 import { calculateTargets, cn } from "@/lib/utils";
 import { MobileLayout } from "@/components/layout";
-import { ChevronRight, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { ChevronRight, ArrowRight, Loader2, Sparkles, ShieldAlert } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const GOALS = [
@@ -27,14 +27,15 @@ export default function Onboarding() {
   const [weight, setWeight] = useState("");
   const [goal, setGoal] = useState<"lose" | "maintain" | "gain">("maintain");
   const [activity, setActivity] = useState<"sedentary" | "lightly_active" | "active" | "very_active">("lightly_active");
+  const [safetyNotice, setSafetyNotice] = useState(false);
 
   const saveProfile = useSaveProfile();
 
   const handleNext = () => setStep((s) => s + 1);
 
   const handleComplete = () => {
-    const targets = calculateTargets(Number(weight), goal, activity);
-    
+    const { safetyAdjusted, ...targets } = calculateTargets(Number(weight), goal, activity);
+
     saveProfile.mutate({
       data: {
         weight: Number(weight),
@@ -45,10 +46,19 @@ export default function Onboarding() {
     }, {
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: getGetBillingEntitlementQueryKey() });
-        setLocation("/dashboard");
+        if (safetyAdjusted) {
+          // The raw calculation landed below a safe daily calorie floor. Don't route
+          // straight to the dashboard with an unexplained number — tell the user their
+          // target was adjusted and point them to a professional before they continue.
+          setSafetyNotice(true);
+        } else {
+          setLocation("/dashboard");
+        }
       }
     });
   };
+
+  const continueToDashboard = () => setLocation("/dashboard");
 
   return (
     <MobileLayout>
@@ -106,6 +116,11 @@ export default function Onboarding() {
                     autoFocus
                   />
                 </div>
+
+                <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">
+                  MacroCount's targets and estimates are not medical advice. Talk to a doctor or
+                  registered dietitian before starting a new diet or exercise plan.
+                </p>
 
                 <div className="mt-auto">
                   <button
@@ -168,7 +183,7 @@ export default function Onboarding() {
               </motion.div>
             )}
 
-            {step === 3 && (
+            {step === 3 && !safetyNotice && (
               <motion.div
                 key="step3"
                 initial={{ opacity: 0, x: 20 }}
@@ -217,6 +232,43 @@ export default function Onboarding() {
                     ) : (
                       <>Let's go <ChevronRight className="w-5 h-5" /></>
                     )}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {safetyNotice && (
+              <motion.div
+                key="safety-notice"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="absolute inset-0 flex flex-col"
+              >
+                <div className="mb-8">
+                  <div className="w-12 h-12 bg-destructive/15 text-destructive rounded-2xl flex items-center justify-center mb-6">
+                    <ShieldAlert className="w-6 h-6" />
+                  </div>
+                  <h1 className="text-4xl leading-[1.05] font-display font-bold text-foreground mb-3">
+                    We adjusted your target
+                  </h1>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Based on what you entered, your calculated calorie target came out below a safe
+                    daily minimum, so we've raised it to a safer level instead. Very low-calorie
+                    diets should only be followed under medical supervision.
+                  </p>
+                  <p className="mt-4 text-muted-foreground leading-relaxed">
+                    Please talk to a doctor or registered dietitian before pursuing more aggressive
+                    weight loss than this target reflects.
+                  </p>
+                </div>
+
+                <div className="mt-auto">
+                  <button
+                    onClick={continueToDashboard}
+                    className="w-full h-14 bg-primary text-primary-foreground rounded-2xl font-bold flex items-center justify-center gap-2 active:scale-[0.98]"
+                  >
+                    I understand, continue <ChevronRight className="w-5 h-5" />
                   </button>
                 </div>
               </motion.div>

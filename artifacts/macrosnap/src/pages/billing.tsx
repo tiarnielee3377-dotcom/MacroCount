@@ -23,6 +23,9 @@ import {
 
 type Plan = "weekly" | "monthly" | "yearly";
 
+const TERMS_OF_USE_URL = "https://claude.ai/code/artifact/706402ac-9a0b-4be0-8f72-7e8590dbdf0a";
+const PRIVACY_POLICY_URL = "https://claude.ai/code/artifact/173da035-3700-4638-98b8-e786c2c3cfc1";
+
 const planLabels: Record<Plan, string> = {
   weekly: "weekly",
   monthly: "monthly",
@@ -322,6 +325,15 @@ export default function Billing() {
             {usesAppleBilling
               ? "Payment is charged to your Apple ID. Subscriptions renew automatically unless cancelled in Apple ID settings."
               : "Payment is handled securely by Stripe. Cancel in the customer portal anytime."}
+          </p>
+          <p className="mt-2 text-center text-xs leading-5 text-muted-foreground">
+            <a href={TERMS_OF_USE_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground underline underline-offset-2">
+              Terms of Use
+            </a>
+            {" · "}
+            <a href={PRIVACY_POLICY_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground underline underline-offset-2">
+              Privacy Policy
+            </a>
           </p>
         </div>
       </div>

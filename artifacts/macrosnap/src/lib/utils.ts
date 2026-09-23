@@ -20,10 +20,15 @@ export function formatTime(date: string | Date) {
   }).format(new Date(date));
 }
 
+// Widely-recognized safety floor for a daily calorie target. Guidance from major health
+// bodies (e.g. NHS, USDA) treats sustained intake below this as a level that should only
+// be pursued under medical supervision, not something an app should hand out silently.
+const MIN_SAFE_CALORIE_TARGET = 1200;
+
 export function calculateTargets(weightKg: number, goal: string, activityLevel: string) {
   // Simple BMR
   const bmr = weightKg * 22;
-  
+
   // Activity Multiplier
   let multiplier = 1.2;
   switch (activityLevel) {
@@ -32,23 +37,30 @@ export function calculateTargets(weightKg: number, goal: string, activityLevel: 
     case 'active': multiplier = 1.55; break;
     case 'very_active': multiplier = 1.725; break;
   }
-  
+
   const tdee = Math.round(bmr * multiplier);
-  
+
   // Goal Modifier
   let calorieTarget = tdee;
   if (goal === 'lose') calorieTarget -= 500;
   if (goal === 'gain') calorieTarget += 500;
-  
+
+  // Safety floor: never hand out an unwarned, medically unsafe calorie target.
+  // If the raw calculation lands below the floor, clamp it and flag it so the UI
+  // can tell the user their target was adjusted and to talk to a professional.
+  const safetyAdjusted = calorieTarget < MIN_SAFE_CALORIE_TARGET;
+  if (safetyAdjusted) calorieTarget = MIN_SAFE_CALORIE_TARGET;
+
   // Macros
   const proteinTarget = Math.round(weightKg * 2); // 2g per kg
   const fatTarget = Math.round((calorieTarget * 0.3) / 9); // 30% from fat
   const carbsTarget = Math.round((calorieTarget - (proteinTarget * 4) - (fatTarget * 9)) / 4);
-  
+
   return {
     calorieTarget,
     proteinTarget,
     carbsTarget: Math.max(0, carbsTarget),
     fatTarget,
+    safetyAdjusted,
   };
 }
