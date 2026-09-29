@@ -18,7 +18,7 @@ import {
   Loader2, Check, Sparkles, X, ChevronRight, Scale,
   Flame
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { CALCULATION_SOURCES_URL, cn } from "@/lib/utils";
 import { getDeviceTimeZone, getLocalDay } from "@/lib/day";
 
 type MealEstimate = {
@@ -387,6 +387,12 @@ export default function LogMeal() {
                     {estimate.notes}
                   </div>
                 )}
+                <p className="text-center text-xs leading-5 text-muted-foreground">
+                  Calories and macros are AI-generated estimates, not medical advice.{" "}
+                  <a href={CALCULATION_SOURCES_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground underline underline-offset-2">
+                    See sources
+                  </a>
+                </p>
 
                 {/* Actions */}
                 <div className="flex gap-3 mt-4">

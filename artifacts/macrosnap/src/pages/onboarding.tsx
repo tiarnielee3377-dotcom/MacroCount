@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { getGetBillingEntitlementQueryKey, useSaveProfile } from "@workspace/api-client-react";
-import { calculateTargets, cn } from "@/lib/utils";
+import { CALCULATION_SOURCES_URL, calculateTargets, cn } from "@/lib/utils";
 import { MobileLayout } from "@/components/layout";
 import { ChevronRight, ArrowRight, Loader2, Sparkles, ShieldAlert } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -119,7 +119,10 @@ export default function Onboarding() {
 
                 <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">
                   MacroCount's targets and estimates are not medical advice. Talk to a doctor or
-                  registered dietitian before starting a new diet or exercise plan.
+                  registered dietitian before starting a new diet or exercise plan.{" "}
+                  <a href={CALCULATION_SOURCES_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-foreground underline underline-offset-2">
+                    See sources
+                  </a>
                 </p>
 
                 <div className="mt-auto">
@@ -261,6 +264,9 @@ export default function Onboarding() {
                     Please talk to a doctor or registered dietitian before pursuing more aggressive
                     weight loss than this target reflects.
                   </p>
+                  <a href={CALCULATION_SOURCES_URL} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block font-semibold text-foreground underline underline-offset-2">
+                    See sources for how targets are calculated
+                  </a>
                 </div>
 
                 <div className="mt-auto">

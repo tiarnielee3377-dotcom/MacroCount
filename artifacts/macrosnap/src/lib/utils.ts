@@ -25,6 +25,9 @@ export function formatTime(date: string | Date) {
 // be pursued under medical supervision, not something an app should hand out silently.
 const MIN_SAFE_CALORIE_TARGET = 1200;
 
+// Public citations for nutrition calculations, linked from onboarding, dashboard, and meal estimates.
+export const CALCULATION_SOURCES_URL = "https://claude.ai/artifact/HRFevxZFV56xGwq72DkNj1";
+
 export function calculateTargets(weightKg: number, goal: string, activityLevel: string) {
   // Simple BMR
   const bmr = weightKg * 22;

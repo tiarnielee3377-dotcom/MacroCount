@@ -15,7 +15,7 @@ import type { MacroProgress } from "@workspace/api-client-react";
 import { MobileLayout } from "@/components/layout";
 import { BottomNav } from "@/components/bottom-nav";
 import { ProgressRing, MacroBar } from "@/components/progress-rings";
-import { formatTime } from "@/lib/utils";
+import { CALCULATION_SOURCES_URL, formatTime } from "@/lib/utils";
 import { Award, CheckCircle2, Flame, Plus, Trash2, Camera, BookOpen, Dumbbell } from "lucide-react";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -282,7 +282,7 @@ export default function Dashboard() {
         </header>
 
         {/* Primary Target Ring */}
-        <div className="px-5 flex justify-center mb-8">
+        <div className="px-5 mb-8">
           <div className="relative p-6 bg-card rounded-[2rem] border border-card-border w-full flex flex-col items-center">
             <ProgressRing progress={calsPercent} size={180} strokeWidth={14} colorClass={calorieRingColor} trackColorClass="text-secondary">
               <div className="text-center mt-2">
@@ -303,6 +303,11 @@ export default function Dashboard() {
                 <span className="block font-medium text-foreground">{profile.calorieTarget}</span>
               </div>
             </div>
+          </div>
+          <div className="mt-3 text-center">
+            <a href={CALCULATION_SOURCES_URL} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-foreground underline underline-offset-2">
+              How these numbers are calculated
+            </a>
           </div>
         </div>
 
