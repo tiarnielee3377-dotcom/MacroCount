@@ -1,3 +1,4 @@
+// build trigger: 2026-10-29, no functional change
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
